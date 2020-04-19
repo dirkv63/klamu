@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+<h1>{{ hdr }}</h1>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-hover">
+            <tr>
+                <th>Komponist</th>
+                <th>Naam</th>
+            </tr>
+            {% for row in komponisten %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('main.show_komponist', nid=row.id) }}">
+                            {{ row.voornaam }} {{ row.naam }}
+                        </a>
+                    </td>
+                    <td>
+                    {% for kompositie in row.kompositie %}
+                        {{ kompositie.naam }}<br>
+                    {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}
