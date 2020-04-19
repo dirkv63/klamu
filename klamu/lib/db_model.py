@@ -191,6 +191,10 @@ def get_komponisten():
     komponisten = Komponist.query
     return komponisten
 
+def get_kompositie(nid):
+    kompositie = Kompositie.query.filter_by(id=nid).one()
+    return kompositie
+
 def get_komposities():
     """
     Function to return list of all komposities.

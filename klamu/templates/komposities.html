@@ -13,7 +13,11 @@
             {% for row in komposities %}
                 <tr>
                     <td>{{ row.naam }}</td>
-                    <td>{{ row.komponist.voornaam }} {{ row.komponist.naam }}</td>
+                    <td>
+                        <a href="{{ url_for('main.show_komponist', nid=row.komponist.id) }}">
+                            {{ row.komponist.voornaam }} {{ row.komponist.naam }}
+                        </a>
+                    </td>
                 </tr>
             {% endfor %}
         </table>

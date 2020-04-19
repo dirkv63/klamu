@@ -95,6 +95,15 @@ def show_komponisten():
     )
     return render_template('komponisten.html', **props)
 
+@main.route('/kompositie/<nid>')
+def show_kompositie(nid):
+    kompositie = ds.get_kompositie(nid)
+    props = dict(
+        hdr=f"{kompositie.naam} - {kompositie.komponist.voornaam} {kompositie.komponist.naam}",
+        kompositie=kompositie
+    )
+    return render_template('kompositie.html', **props)
+
 @main.route('/komposities')
 def show_komposities():
     komposities = ds.get_komposities()

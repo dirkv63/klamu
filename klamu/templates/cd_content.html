@@ -4,7 +4,7 @@
 {% block page_content %}
 <h1>{{ hdr }}</h1>
 Uitgever: {{ cd.uitgever.naam }}<br>
-Identificatie: {{ cd.identificatie }}
+Identificatie: {% if cd.identificatie != None %}{{ cd.identificatie }}{% endif %}
 <div class="row">
     <div class="col-md-12">
         <table class="table table-hover">
@@ -22,8 +22,16 @@ Identificatie: {{ cd.identificatie }}
                             {{ row.volgnummer  }}
                         {% endif %}
                     </td>
-                    <td>{{ row.kompositie.naam }}</td>
-                    <td>{{ row.kompositie.komponist.voornaam }} {{ row.kompositie.komponist.naam }}</td>
+                    <td>
+                        <a href="{{ url_for('main.show_kompositie', nid=row.kompositie.id) }}">
+                            {{ row.kompositie.naam }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.show_komponist', nid=row.kompositie.komponist.id) }}">
+                            {{ row.kompositie.komponist.voornaam }} {{ row.kompositie.komponist.naam }}
+                        </a>
+                    </td>
                     <td>{{ row.uitvoerders.naam }}</td>
                     <td>{{ row.dirigent.voornaam}} {{ row.dirigent.naam }}</td>
                 </tr>

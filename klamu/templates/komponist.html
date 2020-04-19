@@ -8,10 +8,18 @@
         <table class="table table-hover">
             <tr>
                 <th>Naam</th>
+                <th>CD</th>
             </tr>
             {% for kompositie in komponist.kompositie %}
                 <tr>
-                    <td>{{ kompositie.naam }}</td>
+                    <td><a href="{{ url_for('main.show_kompositie', nid=kompositie.id) }}">
+                        {{ kompositie.naam }}
+                    </td>
+                    <td>
+                    {% for uitvoering in kompositie.uitvoering %}
+                        <a href="{{ url_for('main.show_cd', nid=uitvoering.cd.id) }}">{{ uitvoering.cd.titel }}</a><br>
+                    {% endfor %}
+                    </td>
                 </tr>
             {% endfor %}
         </table>
