@@ -112,3 +112,22 @@ def show_komposities():
         komposities=komposities.order_by(Kompositie.naam)
     )
     return render_template('komposities.html', **props)
+
+@main.route('/uitvoerders/<nid>')
+def show_uitvoerders_uitvoeringen(nid):
+    uitvoerders = ds.get_uitvoerders_detail(nid)
+    uitvoeringen = ds.get_uitvoerders_uitvoeringen(nid)
+    props = dict(
+        hdr=uitvoerders.naam,
+        uitvoeringen=uitvoeringen
+    )
+    return render_template('uitvoerders_uitvoeringen.html', **props)
+
+@main.route('/uitvoerders')
+def show_uitvoerders():
+    uitvoerders = ds.get_uitvoerders()
+    props = dict(
+        hdr='Overzicht Uitvoerders',
+        uitvoerders=uitvoerders
+    )
+    return render_template('uitvoerders.html', **props)

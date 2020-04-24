@@ -14,9 +14,17 @@
             </tr>
             {% for uitvoering in kompositie.uitvoering %}
                 <tr>
-                    <td><a href="{{ url_for('main.show_cd', nid=uitvoering.cd.id) }}">{{ uitvoering.cd.titel }}</a></td>
+                    <td>
+                        <a href="{{ url_for('main.show_cd', nid=uitvoering.cd.id) }}">
+                            {{ uitvoering.cd.titel }}
+                        </a>
+                    </td>
                     <td>{{ uitvoering.cd.uitgever.naam }}</td>
-                    <td>{{ uitvoering.uitvoerders.naam }}</td>
+                    <td>
+                        <a href="{{ url_for('main.show_uitvoerders_uitvoeringen', nid=uitvoering.uitvoerders.id) }}">
+                            {{ uitvoering.uitvoerders.naam }}
+                        </a>
+                    </td>
                     <td>{{ uitvoering.dirigent.voornaam }} {{ uitvoering.dirigent.naam }}</td>
                 </tr>
             {% endfor %}

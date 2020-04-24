@@ -210,3 +210,39 @@ def get_cd_uitvoeringen(cd):
     """
     uitvoeringen = Uitvoering.query.filter_by(cd_id=cd)
     return uitvoeringen
+
+def get_uitvoerders_detail(uitvoerders_id):
+    """
+    Function to get uitvoerders record.
+
+    :param uitvoerders_id: Id of the uitvoerders
+    """
+    uitvoerders = Uitvoerders.query.filter_by(id=uitvoerders_id).one()
+    return uitvoerders
+
+def get_uitvoerders_uitvoeringen(uitvoerders_id):
+    """
+    Function to get uitvoeringen for uitvoerders.
+
+    :param uitvoerders_id: Id of the uitvoerders
+    """
+    uitvoeringen = Uitvoering.query.filter_by(uitvoerders_id=uitvoerders_id)
+    return uitvoeringen
+
+def get_uitvoerders():
+    """
+    Function to return list of all Uitvoerders.
+
+    select count(*), uitvoerders_id from uitvoering
+    where uitvoerders_id is not null
+    group by uitvoerders_id order by count(*) desc
+    """
+    query = db.session.query(db.func.count(Uitvoering.id).label("Cnt"), Uitvoerders) \
+        .join(Uitvoerders)\
+        .group_by(Uitvoering.uitvoerders_id)\
+        .order_by(db.func.count(Uitvoering.id).desc())
+    # uitvoerders = Uitvoerders.query
+    # res = Uitvoering.query.join(Uitvoerders).count()
+    # res = Uitvoering.query.join(Uitvoerders).group_by(Uitvoering.uitvoerders).all()
+    print(f"Query: {query}")
+    return query.all()

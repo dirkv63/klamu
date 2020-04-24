@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+<h1>{{ hdr }}</h1>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-hover">
+            <tr>
+                <th>CD</th>
+                <th>Nr</th>
+                <th>Naam</th>
+                <th>Komponist</th>
+                <th>Dirigent</th>
+            </tr>
+            {% for row in uitvoeringen %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('main.show_cd', nid=row.cd.id) }}">
+                            {{ row.cd.titel }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if row.volgnummer != None %}
+                            {{ row.volgnummer }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.show_kompositie', nid=row.kompositie.id) }}">
+                            {{ row.kompositie.naam }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.show_komponist', nid=row.kompositie.komponist.id) }}">
+                            {{ row.kompositie.komponist.voornaam }} {{ row.kompositie.komponist.naam }}
+                        </a>
+                    </td>
+                    <td>{{ row.dirigent.voornaam}} {{ row.dirigent.naam }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}
