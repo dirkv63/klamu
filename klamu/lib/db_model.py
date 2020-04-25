@@ -180,16 +180,33 @@ def get_cds():
     cds = Cd.query
     return cds
 
+def get_dirigent(nid):
+    dirigent = Dirigent.query.filter_by(id=nid).one()
+    return dirigent
+
+def get_dirigenten():
+    """
+    Function to return list of all Dirigenten and number of Uitvoeringen.
+    """
+    query = db.session.query(db.func.count(Uitvoering.id).label("Cnt"), Dirigent) \
+        .join(Dirigent) \
+        .group_by(Uitvoering.dirigent_id) \
+        .order_by(db.func.count(Uitvoering.id).desc())
+    return query
+
 def get_komponist(nid):
     komponist = Komponist.query.filter_by(id=nid).one()
     return komponist
 
 def get_komponisten():
     """
-    Function to return list of all Komponisten.
+    Function to return list of all Komponisten and number of Komposities.
     """
-    komponisten = Komponist.query
-    return komponisten
+    query = db.session.query(db.func.count(Kompositie.id).label("Cnt"), Komponist) \
+        .join(Komponist) \
+        .group_by(Kompositie.komponist_id) \
+        .order_by(db.func.count(Kompositie.id).desc())
+    return query
 
 def get_kompositie(nid):
     kompositie = Kompositie.query.filter_by(id=nid).one()
@@ -199,8 +216,11 @@ def get_komposities():
     """
     Function to return list of all komposities.
     """
-    komposities = Kompositie.query
-    return komposities
+    query = db.session.query(db.func.count(Uitvoering.id).label("Cnt"), Kompositie) \
+        .join(Kompositie) \
+        .group_by(Uitvoering.kompositie_id) \
+        .order_by(db.func.count(Uitvoering.id).desc())
+    return query
 
 def get_cd_uitvoeringen(cd):
     """
@@ -232,16 +252,9 @@ def get_uitvoerders_uitvoeringen(uitvoerders_id):
 def get_uitvoerders():
     """
     Function to return list of all Uitvoerders.
-
-    select count(*), uitvoerders_id from uitvoering
-    where uitvoerders_id is not null
-    group by uitvoerders_id order by count(*) desc
     """
     query = db.session.query(db.func.count(Uitvoering.id).label("Cnt"), Uitvoerders) \
         .join(Uitvoerders)\
         .group_by(Uitvoering.uitvoerders_id)\
         .order_by(db.func.count(Uitvoering.id).desc())
-    # uitvoerders = Uitvoerders.query
-    # res = Uitvoering.query.join(Uitvoerders).count()
-    # res = Uitvoering.query.join(Uitvoerders).group_by(Uitvoering.uitvoerders).all()
     return query.all()

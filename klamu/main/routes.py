@@ -77,6 +77,24 @@ def show_cds():
     )
     return render_template('cds.html', **props)
 
+@main.route('/dirigent/<nid>')
+def show_dirigent(nid):
+    dirigent = ds.get_dirigent(nid)
+    props = dict(
+        hdr="{} {}".format(dirigent.voornaam, dirigent.naam),
+        komponist=dirigent
+    )
+    return render_template('dirigent.html', **props)
+
+@main.route('/dirigenten')
+def show_dirigenten():
+    dirigenten = ds.get_dirigenten()
+    props = dict(
+        hdr='Overzicht Dirigenten',
+        komponisten=dirigenten
+    )
+    return render_template('dirigenten.html', **props)
+
 @main.route('/komponist/<nid>')
 def show_komponist(nid):
     komponist = ds.get_komponist(nid)
@@ -91,7 +109,7 @@ def show_komponisten():
     komponisten = ds.get_komponisten()
     props = dict(
         hdr='Overzicht Komponisten',
-        komponisten=komponisten.order_by(Komponist.naam)
+        komponisten=komponisten
     )
     return render_template('komponisten.html', **props)
 
@@ -109,7 +127,7 @@ def show_komposities():
     komposities = ds.get_komposities()
     props = dict(
         hdr='Overzicht Komposities',
-        komposities=komposities.order_by(Kompositie.naam)
+        komposities=komposities
     )
     return render_template('komposities.html', **props)
 
