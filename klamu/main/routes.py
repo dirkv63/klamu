@@ -81,7 +81,7 @@ def show_cds():
 def show_komponist(nid):
     komponist = ds.get_komponist(nid)
     props = dict(
-        hdr=f"{komponist.voornaam} {komponist.naam}",
+        hdr="{} {}".format(komponist.voornaam, komponist.naam),
         komponist=komponist
     )
     return render_template('komponist.html', **props)
@@ -99,7 +99,7 @@ def show_komponisten():
 def show_kompositie(nid):
     kompositie = ds.get_kompositie(nid)
     props = dict(
-        hdr=f"{kompositie.naam} - {kompositie.komponist.voornaam} {kompositie.komponist.naam}",
+        hdr="{} - {} {}".format(kompositie.naam, kompositie.komponist.voornaam, kompositie.komponist.naam),
         kompositie=kompositie
     )
     return render_template('kompositie.html', **props)
