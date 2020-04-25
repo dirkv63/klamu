@@ -32,8 +32,16 @@ Identificatie: {% if cd.identificatie != None %}{{ cd.identificatie }}{% endif %
                             {{ row.kompositie.komponist.voornaam }} {{ row.kompositie.komponist.naam }}
                         </a>
                     </td>
-                    <td>{{ row.uitvoerders.naam }}</td>
-                    <td>{{ row.dirigent.voornaam}} {{ row.dirigent.naam }}</td>
+                    <td>
+                        <a href="{{ url_for('main.show_uitvoerders_uitvoeringen', nid=row.uitvoerders.id) }}">
+                            {{ row.uitvoerders.naam }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.show_dirigent', nid=row.dirigent.id) }}">
+                            {{ row.dirigent.voornaam}} {{ row.dirigent.naam }}
+                        </a>
+                    </td>
                 </tr>
             {% endfor %}
         </table>

@@ -80,29 +80,31 @@ def show_cds():
 @main.route('/dirigent/<nid>')
 def show_dirigent(nid):
     dirigent = ds.get_dirigent(nid)
+    uitvoeringen = ds.get_dirigent_uitvoeringen(nid)
     props = dict(
         hdr="{} {}".format(dirigent.voornaam, dirigent.naam),
-        komponist=dirigent
+        uitvoeringen=uitvoeringen
     )
-    return render_template('dirigent.html', **props)
+    return render_template('uitvoeringen.html', **props)
 
 @main.route('/dirigenten')
 def show_dirigenten():
     dirigenten = ds.get_dirigenten()
     props = dict(
         hdr='Overzicht Dirigenten',
-        komponisten=dirigenten
+        dirigenten=dirigenten
     )
     return render_template('dirigenten.html', **props)
 
 @main.route('/komponist/<nid>')
 def show_komponist(nid):
     komponist = ds.get_komponist(nid)
+    uitvoeringen = ds.get_komponist_uitvoeringen(nid)
     props = dict(
         hdr="{} {}".format(komponist.voornaam, komponist.naam),
-        komponist=komponist
+        uitvoeringen=uitvoeringen
     )
-    return render_template('komponist.html', **props)
+    return render_template('uitvoeringen.html', **props)
 
 @main.route('/komponisten')
 def show_komponisten():
@@ -116,11 +118,12 @@ def show_komponisten():
 @main.route('/kompositie/<nid>')
 def show_kompositie(nid):
     kompositie = ds.get_kompositie(nid)
+    uitvoeringen = ds.get_kompositie_uitvoeringen(nid)
     props = dict(
         hdr="{} - {} {}".format(kompositie.naam, kompositie.komponist.voornaam, kompositie.komponist.naam),
-        kompositie=kompositie
+        uitvoeringen=uitvoeringen
     )
-    return render_template('kompositie.html', **props)
+    return render_template('uitvoeringen.html', **props)
 
 @main.route('/komposities')
 def show_komposities():
@@ -139,7 +142,7 @@ def show_uitvoerders_uitvoeringen(nid):
         hdr=uitvoerders.naam,
         uitvoeringen=uitvoeringen
     )
-    return render_template('uitvoerders_uitvoeringen.html', **props)
+    return render_template('uitvoeringen.html', **props)
 
 @main.route('/uitvoerders')
 def show_uitvoerders():

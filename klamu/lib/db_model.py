@@ -194,9 +194,27 @@ def get_dirigenten():
         .order_by(db.func.count(Uitvoering.id).desc())
     return query
 
+def get_dirigent_uitvoeringen(dirigent_id):
+    """
+    Function to get uitvoeringen for dirigent.
+
+    :param dirigent_id: Id of the dirigent
+    """
+    uitvoeringen = Uitvoering.query.filter_by(dirigent_id=dirigent_id)
+    return uitvoeringen
+
 def get_komponist(nid):
     komponist = Komponist.query.filter_by(id=nid).one()
     return komponist
+
+def get_komponist_uitvoeringen(komponist_id):
+    """
+    Function to get uitvoeringen for a komponist.
+
+    :param komponist_id: Id of the komponist
+    """
+    uitvoeringen = db.session.query(Uitvoering).join(Kompositie).filter(Kompositie.komponist_id==komponist_id)
+    return uitvoeringen
 
 def get_komponisten():
     """
@@ -211,6 +229,15 @@ def get_komponisten():
 def get_kompositie(nid):
     kompositie = Kompositie.query.filter_by(id=nid).one()
     return kompositie
+
+def get_kompositie_uitvoeringen(kompositie_id):
+    """
+    Function to get uitvoeringen for kompositie.
+
+    :param kompositie_id: Id of the kompositie
+    """
+    uitvoeringen = Uitvoering.query.filter_by(kompositie_id=kompositie_id)
+    return uitvoeringen
 
 def get_komposities():
     """
