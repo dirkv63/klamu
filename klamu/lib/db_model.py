@@ -244,5 +244,4 @@ def get_uitvoerders():
     # uitvoerders = Uitvoerders.query
     # res = Uitvoering.query.join(Uitvoerders).count()
     # res = Uitvoering.query.join(Uitvoerders).group_by(Uitvoering.uitvoerders).all()
-    print(f"Query: {query}")
     return query.all()
