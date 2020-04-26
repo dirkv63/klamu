@@ -1,11 +1,22 @@
 {% extends "layout.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript" class="init">
+    $(document).ready(function() {
+        $('#uitvoeringen').DataTable();
+    } );
+    </script>
+{% endblock %}
+
 {% block page_content %}
+
 <h1>{{ hdr }}</h1>
 <div class="row">
     <div class="col-md-12">
-        <table class="table table-hover">
+        <table id="uitvoeringen" class="table table-hover">
+            <thead>
             <tr>
                 <th>CD</th>
                 <th>Nr</th>
@@ -14,6 +25,8 @@
                 <th>Uitvoerders</th>
                 <th>Dirigent</th>
             </tr>
+            </thead>
+            <tbody>
             {% for row in uitvoeringen %}
                 <tr>
                     <td>
@@ -48,6 +61,7 @@
                     </td>
                 </tr>
             {% endfor %}
+            </tbody>
         </table>
     </div>
 </div>

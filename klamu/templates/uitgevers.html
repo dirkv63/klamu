@@ -5,7 +5,7 @@
     {{ super() }}
     <script type="text/javascript" class="init">
     $(document).ready(function() {
-        $('#uitvoerders').DataTable();
+        $('#uitgevers').DataTable();
     } );
     </script>
 {% endblock %}
@@ -14,19 +14,19 @@
 <h1>{{ hdr }}</h1>
 <div class="row">
     <div class="col-md-6">
-        <table id="uitvoerders" class="table table-hover">
+        <table id="uitgevers" class="table table-hover">
             <thead>
             <tr>
-                <th>Uitvoerders</th>
+                <th>Uitgever</th>
                 <th>Aantal</th>
             </tr>
             </thead>
             <tbody>
-            {% for row in uitvoerders %}
+            {% for row in uitgevers %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('main.show_uitvoerders_uitvoeringen', nid=row.Uitvoerders.id) }}">
-                            {{ row.Uitvoerders.naam }}
+                        <a href="{{ url_for('main.show_cds', nid=row.Uitgever.id) }}">
+                            {{ row.Uitgever.naam }}
                         </a>
                     </td>
                     <td>{{ row.Cnt }}</td>

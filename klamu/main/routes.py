@@ -64,16 +64,17 @@ def show_cd(nid):
     props = dict(
         hdr=cd.titel,
         cd=cd,
-        uitvoeringen=uitvoeringen.order_by(Uitvoering.volgnummer)
+        uitvoeringen=uitvoeringen
     )
     return render_template('cd_content.html', **props)
 
 @main.route('/cds')
-def show_cds():
-    cds = ds.get_cds()
+@main.route('/cds/<nid>')
+def show_cds(nid=None):
+    cds = ds.get_cds(nid)
     props = dict(
         hdr='Overzicht CDs',
-        cds=cds.order_by(Cd.titel)
+        cds=cds
     )
     return render_template('cds.html', **props)
 
@@ -134,6 +135,15 @@ def show_komposities():
     )
     return render_template('komposities.html', **props)
 
+@main.route('/uitgevers')
+def show_uitgevers():
+    uitgevers = ds.get_uitgevers()
+    props = dict(
+        hdr='Overzicht Uitgevers',
+        uitgevers=uitgevers
+    )
+    return render_template('uitgevers.html', **props)
+
 @main.route('/uitvoerders/<nid>')
 def show_uitvoerders_uitvoeringen(nid):
     uitvoerders = ds.get_uitvoerders_detail(nid)
@@ -152,3 +162,12 @@ def show_uitvoerders():
         uitvoerders=uitvoerders
     )
     return render_template('uitvoerders.html', **props)
+
+@main.route('/uitvoeringen')
+def show_uitvoeringen():
+    uitvoeringen = ds.get_uitvoeringen()
+    props = dict(
+        hdr='Overzicht Uitvoeringen',
+        uitvoeringen=uitvoeringen
+    )
+    return render_template('uitvoeringen.html', **props)

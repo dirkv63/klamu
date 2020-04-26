@@ -173,11 +173,16 @@ def get_cd(nid):
     cd = Cd.query.filter_by(id=nid).one()
     return cd
 
-def get_cds():
+def get_cds(nid):
     """
     Function to return list of all CDs.
+
+    :param nid: Id of the uitgever or None for all CDs.
     """
-    cds = Cd.query
+    if nid:
+        cds = Cd.query.filter_by(uitgever_id=nid)
+    else:
+        cds = Cd.query
     return cds
 
 def get_dirigent(nid):
@@ -245,8 +250,7 @@ def get_komposities():
     """
     query = db.session.query(db.func.count(Uitvoering.id).label("Cnt"), Kompositie) \
         .join(Kompositie) \
-        .group_by(Uitvoering.kompositie_id) \
-        .order_by(db.func.count(Uitvoering.id).desc())
+        .group_by(Uitvoering.kompositie_id)
     return query
 
 def get_cd_uitvoeringen(cd):
@@ -257,6 +261,15 @@ def get_cd_uitvoeringen(cd):
     """
     uitvoeringen = Uitvoering.query.filter_by(cd_id=cd)
     return uitvoeringen
+
+def get_uitgevers():
+    """
+    Function to return list of all Uitgevers.
+    """
+    query = db.session.query(db.func.count(Cd.id).label("Cnt"), Uitgever) \
+        .join(Uitgever)\
+        .group_by(Cd.uitgever_id)
+    return query.all()
 
 def get_uitvoerders_detail(uitvoerders_id):
     """
@@ -282,6 +295,12 @@ def get_uitvoerders():
     """
     query = db.session.query(db.func.count(Uitvoering.id).label("Cnt"), Uitvoerders) \
         .join(Uitvoerders)\
-        .group_by(Uitvoering.uitvoerders_id)\
-        .order_by(db.func.count(Uitvoering.id).desc())
+        .group_by(Uitvoering.uitvoerders_id)
     return query.all()
+
+def get_uitvoeringen():
+    """
+    Function to get uitvoeringen.
+    """
+    uitvoeringen = Uitvoering.query
+    return uitvoeringen

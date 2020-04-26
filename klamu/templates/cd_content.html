@@ -1,13 +1,23 @@
 {% extends "layout.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript" class="init">
+    $(document).ready(function() {
+        $('#cd_content').DataTable();
+    } );
+    </script>
+{% endblock %}
+
 {% block page_content %}
 <h1>{{ hdr }}</h1>
 Uitgever: {{ cd.uitgever.naam }}<br>
 Identificatie: {% if cd.identificatie != None %}{{ cd.identificatie }}{% endif %}
 <div class="row">
     <div class="col-md-12">
-        <table class="table table-hover">
+        <table id="cd_content" class="table table-hover">
+            <thead>
             <tr>
                 <th>Nr</th>
                 <th>Naam</th>
@@ -15,6 +25,8 @@ Identificatie: {% if cd.identificatie != None %}{{ cd.identificatie }}{% endif %
                 <th>Uitvoerders</th>
                 <th>Dirigent</th>
             </tr>
+            </thead>
+            <tbody>
             {% for row in uitvoeringen %}
                 <tr>
                     <td>
@@ -44,6 +56,7 @@ Identificatie: {% if cd.identificatie != None %}{{ cd.identificatie }}{% endif %
                     </td>
                 </tr>
             {% endfor %}
+            </tbody>
         </table>
     </div>
 </div>

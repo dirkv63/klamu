@@ -4,6 +4,12 @@
 {{ super() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs/dt-1.10.20/datatables.min.css"/>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs/dt-1.10.20/datatables.min.js"></script>
 {% endblock %}
 
 {% block title %}Klamu{% endblock %}
@@ -29,10 +35,12 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href="{{ url_for('main.show_cds') }}">CDs</a></li>
+                            <li><a href="{{ url_for('main.show_dirigenten') }}">Dirigenten</a></li>
                             <li><a href="{{ url_for('main.show_komponisten') }}">Komponisten</a></li>
                             <li><a href="{{ url_for('main.show_komposities') }}">Komposities</a></li>
+                            <li><a href="{{ url_for('main.show_uitgevers') }}">Uitgevers</a></li>
                             <li><a href="{{ url_for('main.show_uitvoerders') }}">Uitvoerders</a></li>
-                            <li><a href="{{ url_for('main.show_dirigenten') }}">Dirigenten</a></li>
+                            <li><a href="{{ url_for('main.show_uitvoeringen') }}">Uitvoeringen</a></li>
                         </ul>
                     </li>
                 </ul>
