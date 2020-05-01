@@ -18,6 +18,9 @@
             <thead>
             <tr>
                 <th>Titel</th>
+                {% if current_user.is_authenticated %}
+                <th></th>
+                {% endif %}
                 <th>Identificatie</th>
                 <th>Uitgever</th>
                 <th>Toegevoegd</th>
@@ -29,6 +32,13 @@
                     <td>
                         <a href="{{ url_for('main.show_cd', nid=row.id) }}">{{ row.titel }}</a>
                     </td>
+                    {% if current_user.is_authenticated %}
+                    <td>
+                        <a href="{{ url_for('main.cd_update', nid=row.id) }}">
+                            <span class="glyphicon glyphicon-edit"></span>
+                        </a>
+                    </td>
+                    {% endif %}
                     {% if row.identificatie == None %}
                         <td></td>
                     {% else %}

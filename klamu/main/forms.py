@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm as Form
-from wtforms import StringField, SubmitField, PasswordField, BooleanField, TextAreaField
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, TextAreaField, SelectField
 import wtforms.validators as wtv
 
 from wtforms.widgets import TextArea
@@ -37,3 +37,9 @@ class PwdUpdate(Form):
 class Search(Form):
     search = StringField('Search', validators=[wtv.InputRequired()])
     submit = SubmitField('Go!')
+
+class Cd(Form):
+    titel = StringField('Titel', validators=[wtv.InputRequired()])
+    identificatie = StringField('Identificatie')
+    uitgever = SelectField('Uitgever: ', coerce=str)
+    submit = SubmitField('OK')

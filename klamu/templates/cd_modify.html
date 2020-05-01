@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+<div class="row">
+    <div class="col-md-4">
+        <h1>Gegevens</h1>
+       {{ wtf.quick_form(form) }}
+    </div>
+    <div>
+        <a href="{{ url_for('main.uitgever_update') }}" class="btn btn-danger" role="button">
+            Uitgever
+                                    </a>
+
+    </div>
+</div>
+{% endblock %}

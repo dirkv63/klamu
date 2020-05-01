@@ -5,6 +5,8 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
+
 
 class Cd(db.Model):
     """
@@ -18,6 +20,36 @@ class Cd(db.Model):
     titel = db.Column(db.Text, nullable=False)
     uitgever_id = db.Column(db.Integer, db.ForeignKey('uitgever.id'))
     uitgever = db.relationship("Uitgever", backref='cd')
+
+    @staticmethod
+    def update(**params):
+        """
+        This method will add or edit the CD.
+
+        :param params: Dictionary with titel, identificatie en uitgever. ID is optional, If ID then update else add CD.
+        :return: ID of the CD.
+        """
+        now = int(time.time())
+        params['modified'] = now
+        if params["uitgever_id"] == '-1':
+            params["uitgever_id"] = None
+        if len(params['identificatie']) == 0:
+            params['identificatie'] = None
+        if 'id' in params:
+            # Update record
+            cd = db.session.query(Cd).filter_by(id=params['id']).one()
+            cd.titel = params["titel"]
+            cd.identificatie = params["identificatie"]
+            cd.uitgever_id = params["uitgever_id"]
+        else:
+            # Insert new record
+            params['created'] = now
+            cd = Cd(**params)
+            db.session.add(cd)
+        db.session.commit()
+        db.session.refresh(cd)
+        return cd.id
+
 
 class Dirigent(db.Model):
     """
@@ -261,6 +293,14 @@ def get_cd_uitvoeringen(cd):
     """
     uitvoeringen = Uitvoering.query.filter_by(cd_id=cd)
     return uitvoeringen
+
+def get_uitgever_pairs():
+    """
+    Function to return list of uitgevers in pairs uitgever.id, uitgever.naam. This can be used in a SelectField.
+    """
+    uitgevers = Uitgever.query.order_by(Uitgever.naam.asc())
+    res = [(uitgever.id, uitgever.naam) for uitgever in uitgevers]
+    return res
 
 def get_uitgevers():
     """

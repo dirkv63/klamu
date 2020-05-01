@@ -1,14 +1,14 @@
 import klamu.lib.db_model as ds
 from flask import render_template, flash, redirect, url_for, request
 from flask_login import login_required, login_user, logout_user, current_user
-from .forms import *
+from . import forms
 from . import main
 from klamu.lib.db_model import *
 
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
-    form = Login()
+    form = forms.Login()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user is None or not user.verify_password(form.password.data):
@@ -29,7 +29,7 @@ def logout():
 @main.route('/pwdupdate', methods=['GET', 'POST'])
 @login_required
 def pwd_update():
-    form = PwdUpdate()
+    form = forms.PwdUpdate()
     if form.validate_on_submit():
         user = ds.load_user(current_user.get_id())
         if user is None or not user.verify_password(form.current_pwd.data):
@@ -49,8 +49,51 @@ def index():
 
 
 @main.errorhandler(404)
-def not_found(e):
+def page_not_found(e):
     return render_template("404.html", err=e)
+
+@main.route('/uitgever/update')
+@login_required
+def uitgever_update():
+    flash(request.referrer, 'info')
+    return redirect(url_for('main.index'))
+
+@main.route('/cd/update', methods=['GET', 'POST'])
+@main.route('/cd/update/<nid>', methods=['GET', 'POST'])
+@login_required
+def cd_update(nid=None):
+    if request.method == "GET":
+        if nid:
+            # Update existing CD
+            cd = get_cd(nid)
+            if cd.uitgever_id:
+                form = forms.Cd(uitgever=cd.uitgever_id)
+            else:
+                form = forms.Cd()
+            form.titel.data = cd.titel
+            form.identificatie.data = cd.identificatie
+        else:
+            form = forms.Cd()
+        uitgevers = ds.get_uitgever_pairs()
+        uitgevers.insert(0, (-1, '(geen uitgever)'))
+        form.uitgever.choices = uitgevers
+        props = dict(
+            form=form
+        )
+        return render_template('cd_modify.html', **props)
+    else:
+        form = forms.Cd()
+        props = dict(
+            titel=form.titel.data,
+            identificatie=form.identificatie.data,
+            uitgever_id=form.uitgever.data
+        )
+        if props['uitgever_id'] == -1:
+            props['uitgever_id'] = None
+        if nid:
+            props['id'] = nid
+        nid = Cd.update(**props)
+        return redirect(url_for('main.show_cd', nid=nid))
 
 @main.route('/cd/<nid>')
 def show_cd(nid):
@@ -171,3 +214,8 @@ def show_uitvoeringen():
         uitvoeringen=uitvoeringen
     )
     return render_template('uitvoeringen.html', **props)
+
+@main.route('/register')
+def register():
+    ds.User.register('christien', 'christien')
+    return redirect('main.index')

@@ -40,6 +40,7 @@ def create_app(config_class=Config):
     # import blueprints
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
+    # app.register_error_handler(404, page_not_found) - or use decorator
 
     # add Jinja Filters
     app.jinja_env.filters['datestamp'] = my_env.datestamp
