@@ -39,7 +39,12 @@ class Search(Form):
     submit = SubmitField('Go!')
 
 class Cd(Form):
-    titel = StringField('Titel', validators=[wtv.InputRequired()])
+    titel = StringField('Titel', validators=[wtv.InputRequired()], render_kw={"placeholder":'Titel van de CD'})
     identificatie = StringField('Identificatie')
     uitgever = SelectField('Uitgever: ', coerce=str)
+    submit = SubmitField('OK')
+    uitgever_mod = SubmitField('Uitgever Aanpassen')
+
+class Uitgever(Form):
+    uitgever = StringField('Naam', validators=[wtv.InputRequired()])
     submit = SubmitField('OK')

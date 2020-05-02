@@ -1,11 +1,11 @@
-# import logging
+import logging
 import time
 from klamu import db, lm
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 
 class Cd(db.Model):
@@ -88,6 +88,49 @@ class Uitgever(db.Model):
     __tablename = "uitgever"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
+
+    @staticmethod
+    def update(**params):
+        """
+        This method will add or edit the Uitgever. It will add only if Uitgever naam did not exist before.
+
+        :param params: Dictionary with naam and optional ID, If ID then update else add Uitgever.
+        :return: Dictionary with nid (ID of the uitgever), msg and status for flash.
+        """
+        msg = "To be initiated."
+        try:
+            check_uitgever = Uitgever.query.filter(db.func.lower(Uitgever.naam)==params['naam'].lower()).one()
+        except NoResultFound:
+            check_id = None
+        except MultipleResultsFound:
+            msg = f"Uitgever {params['naam']} is niet uniek!"
+            logging.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        else:
+            check_id = check_uitgever.id
+        if 'id' in params:
+            nid = int(params['id'])
+            # Update record
+            uitgever = Uitgever.query.filter_by(id=params['id']).one()
+            if check_id:
+                if nid == int(check_id):
+                    msg = f"Uitgever {params['naam']} is aangepast."
+                else:
+                    msg = f"Uitgever {params['naam']} niet aangepast, bestaat al."
+                    return dict(nid=check_id, msg=msg, status="error")
+            uitgever.naam = params["naam"]
+        else:
+            if check_id:
+                msg = f"Uitgever {params['naam']} niet aangepast, bestaat al."
+                return dict(nid=check_id, msg=msg, status="error")
+            else:
+                # Insert new record
+                msg = f"Uitgever {params['naam']} is toegevoegd."
+                uitgever = Uitgever(**params)
+                db.session.add(uitgever)
+        db.session.commit()
+        db.session.refresh(uitgever)
+        return dict(nid=uitgever.id, msg=msg, status="success")
 
 class Uitvoerders(db.Model):
     """
@@ -293,6 +336,12 @@ def get_cd_uitvoeringen(cd):
     """
     uitvoeringen = Uitvoering.query.filter_by(cd_id=cd)
     return uitvoeringen
+
+def get_uitgever(nid):
+    """
+    Function to return uitgever for NID
+    """
+    return Uitgever.query.filter_by(id=nid).one()
 
 def get_uitgever_pairs():
     """

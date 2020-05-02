@@ -12,7 +12,7 @@
 
 {% block page_content %}
 {% if current_user.is_authenticated %}
-    <a href="{{ url_for('main.cd_update', nid=cd.id) }}">
+    <a href="{{ url_for('main.update_cd', nid=cd.id) }}">
 {% endif %}
 <h1>{{ hdr }}</h1>
 {% if current_user.is_authenticated %}

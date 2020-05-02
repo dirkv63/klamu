@@ -34,7 +34,7 @@
                     </td>
                     {% if current_user.is_authenticated %}
                     <td>
-                        <a href="{{ url_for('main.cd_update', nid=row.id) }}">
+                        <a href="{{ url_for('main.update_cd', nid=row.id) }}">
                             <span class="glyphicon glyphicon-edit"></span>
                         </a>
                     </td>

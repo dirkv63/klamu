@@ -1,5 +1,5 @@
 import klamu.lib.db_model as ds
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, session
 from flask_login import login_required, login_user, logout_user, current_user
 from . import forms
 from . import main
@@ -52,49 +52,6 @@ def index():
 def page_not_found(e):
     return render_template("404.html", err=e)
 
-@main.route('/uitgever/update')
-@login_required
-def uitgever_update():
-    flash(request.referrer, 'info')
-    return redirect(url_for('main.index'))
-
-@main.route('/cd/update', methods=['GET', 'POST'])
-@main.route('/cd/update/<nid>', methods=['GET', 'POST'])
-@login_required
-def cd_update(nid=None):
-    if request.method == "GET":
-        if nid:
-            # Update existing CD
-            cd = get_cd(nid)
-            if cd.uitgever_id:
-                form = forms.Cd(uitgever=cd.uitgever_id)
-            else:
-                form = forms.Cd()
-            form.titel.data = cd.titel
-            form.identificatie.data = cd.identificatie
-        else:
-            form = forms.Cd()
-        uitgevers = ds.get_uitgever_pairs()
-        uitgevers.insert(0, (-1, '(geen uitgever)'))
-        form.uitgever.choices = uitgevers
-        props = dict(
-            form=form
-        )
-        return render_template('cd_modify.html', **props)
-    else:
-        form = forms.Cd()
-        props = dict(
-            titel=form.titel.data,
-            identificatie=form.identificatie.data,
-            uitgever_id=form.uitgever.data
-        )
-        if props['uitgever_id'] == -1:
-            props['uitgever_id'] = None
-        if nid:
-            props['id'] = nid
-        nid = Cd.update(**props)
-        return redirect(url_for('main.show_cd', nid=nid))
-
 @main.route('/cd/<nid>')
 def show_cd(nid):
     """
@@ -114,6 +71,9 @@ def show_cd(nid):
 @main.route('/cds')
 @main.route('/cds/<nid>')
 def show_cds(nid=None):
+    """
+    Function to return CDs. If NID is specified, then CDs will be limited to uitgever with ID=NID.
+    """
     cds = ds.get_cds(nid)
     props = dict(
         hdr='Overzicht CDs',
@@ -187,6 +147,94 @@ def show_uitgevers():
     )
     return render_template('uitgevers.html', **props)
 
+@main.route('/cd/update', methods=['GET', 'POST'])
+@main.route('/cd/update/<nid>', methods=['GET', 'POST'])
+@login_required
+def update_cd(nid=None):
+    if request.method == "GET":
+        # If referrer is update_uitgever, set uitgever_id.
+        uitgever_id = session.pop('uitgever_id', None)
+        if uitgever_id:
+            form = forms.Cd(uitgever=uitgever_id)
+        elif not nid:
+            form = forms.Cd()
+        if nid:
+            # Update existing CD - Keep on using original titel and identificatie after changing Uitgever.
+            cd = get_cd(nid)
+            if not uitgever_id:
+                if cd.uitgever_id:
+                    form = forms.Cd(uitgever=cd.uitgever_id)
+                else:
+                    form = forms.Cd()
+            form.titel.data = cd.titel
+            form.identificatie.data = cd.identificatie
+            session.pop('titel', None)
+            session.pop('identificatie', None)
+        else:
+            # In case of new CD, remember Titel and Identificatie from before changing Uitgever.
+            form.titel.data = session.pop('titel', None)
+            form.identificatie.data = session.pop('identificatie', None)
+        uitgevers = ds.get_uitgever_pairs()
+        uitgevers.insert(0, (-1, '(geen uitgever)'))
+        form.uitgever.choices = uitgevers
+        props = dict(
+            form=form
+        )
+        return render_template('cd_modify.html', **props)
+    else:
+        form = forms.Cd()
+        if form.uitgever_mod.data:
+            # Request to Update Uitgever
+            session['titel'] = form.titel.data
+            session['identificatie'] = form.identificatie.data
+            uitgever_id = form.uitgever.data
+            return redirect(url_for('main.update_uitgever', nid=uitgever_id))
+        else:
+            # Submit Form
+            props = dict(
+                titel=form.titel.data,
+                identificatie=form.identificatie.data,
+                uitgever_id=form.uitgever.data
+            )
+            if nid:
+                props['id'] = nid
+            nid = Cd.update(**props)
+            return redirect(url_for('main.show_cd', nid=nid))
+
+@main.route('/uitgever/update', methods=['GET', 'POST'])
+@main.route('/uitgever/update/<nid>', methods=['GET', 'POST'])
+@login_required
+def update_uitgever(nid='-1'):
+    if nid == '-1':
+        nid = None
+    flash(f"Referrer: {request.referrer}", 'message')
+    if url_for('main.update_cd') in request.referrer:
+        session['uitgever_referrer'] = request.referrer
+        flash(f"Referrer is toegevoegd.", "success")
+    if request.method == "GET":
+        form = forms.Uitgever()
+        if nid:
+            # Update existing Uitgever
+            uitgever = get_uitgever(nid)
+            form.uitgever.data = uitgever.naam
+        props = dict(
+            hdr='Uitgever Toevoegen',
+            form=form
+        )
+        return render_template('uitgever_modify.html', **props)
+    else:
+        form = forms.Uitgever()
+        props = dict(
+            naam=form.uitgever.data
+        )
+        if nid:
+            props['id'] = nid
+        res = Uitgever.update(**props)
+        flash(res['msg'], res['status'])
+        session['uitgever_id'] = res['nid']
+        next_url = session.pop('uitgever_referrer', url_for('main.show_cds', nid=res['nid']))
+        return redirect(next_url)
+
 @main.route('/uitvoerders/<nid>')
 def show_uitvoerders_uitvoeringen(nid):
     uitvoerders = ds.get_uitvoerders_detail(nid)
@@ -214,8 +262,3 @@ def show_uitvoeringen():
         uitvoeringen=uitvoeringen
     )
     return render_template('uitvoeringen.html', **props)
-
-@main.route('/register')
-def register():
-    ds.User.register('christien', 'christien')
-    return redirect('main.index')
