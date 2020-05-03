@@ -8,8 +8,13 @@
 {% endblock %}
 
 {% block scripts %}
-{{ super() }}
+    {{ super() }}
     <script type="text/javascript" src="https://cdn.datatables.net/v/bs/dt-1.10.20/datatables.min.js"></script>
+    <script type="text/javascript" class="init">
+    $(document).ready(function() {
+        $('#my_table').DataTable();
+    } );
+    </script>
 {% endblock %}
 
 {% block title %}Klamu{% endblock %}

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm as Form
-from wtforms import StringField, SubmitField, PasswordField, BooleanField, TextAreaField, SelectField
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, TextAreaField, SelectField, IntegerField
 import wtforms.validators as wtv
 
 from wtforms.widgets import TextArea
@@ -40,11 +40,23 @@ class Search(Form):
 
 class Cd(Form):
     titel = StringField('Titel', validators=[wtv.InputRequired()], render_kw={"placeholder":'Titel van de CD'})
-    identificatie = StringField('Identificatie')
-    uitgever = SelectField('Uitgever: ', coerce=str)
+    identificatie = StringField('Identificatie', render_kw={"placeholder":'Bijkomende informatie'})
+    uitgever = SelectField('Uitgever', coerce=str)
     submit = SubmitField('OK')
     uitgever_mod = SubmitField('Uitgever Aanpassen')
 
 class Uitgever(Form):
     uitgever = StringField('Naam', validators=[wtv.InputRequired()])
     submit = SubmitField('OK')
+
+class Uitvoering(Form):
+    volgnummer = IntegerField('Volgnummer')
+    komponist = SelectField('Komponist', coerce=str)
+    kompositie = SelectField('Kompositie', coerce=str)
+    uitvoerders = SelectField('Uitvoerders', coerce=str)
+    dirigent = SelectField('Dirigent', coerce=str)
+    submit = SubmitField('OK')
+    komponist_mod = SubmitField('Komponist Aanpassen')
+    kompositie_mod = SubmitField('Kompositie Aanpassen')
+    uitvoerders_mod = SubmitField('Uitvoerders Aanpassen')
+    dirigent_mod = SubmitField('Dirigent Aanpassen')

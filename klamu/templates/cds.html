@@ -1,55 +1,6 @@
 {% extends "layout.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
-
-{% block scripts %}
-    {{ super() }}
-    <script type="text/javascript" class="init">
-    $(document).ready(function() {
-        $('#cds').DataTable();
-    } );
-    </script>
-{% endblock %}
+{% import "macros.html" as macros with context %}
 
 {% block page_content %}
-<h1>{{ hdr }}</h1>
-<div class="row">
-    <div class="col-md-12">
-        <table id="cds" class="table table-hover">
-            <thead>
-            <tr>
-                <th>Titel</th>
-                {% if current_user.is_authenticated %}
-                <th></th>
-                {% endif %}
-                <th>Identificatie</th>
-                <th>Uitgever</th>
-                <th>Toegevoegd</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for row in cds %}
-                <tr>
-                    <td>
-                        <a href="{{ url_for('main.show_cd', nid=row.id) }}">{{ row.titel }}</a>
-                    </td>
-                    {% if current_user.is_authenticated %}
-                    <td>
-                        <a href="{{ url_for('main.update_cd', nid=row.id) }}">
-                            <span class="glyphicon glyphicon-edit"></span>
-                        </a>
-                    </td>
-                    {% endif %}
-                    {% if row.identificatie == None %}
-                        <td></td>
-                    {% else %}
-                        <td>{{ row.identificatie }}</td>
-                    {% endif %}
-                    <td>{{ row.uitgever.naam }}</td>
-                    <td>{{ row.created | datestamp }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+    {{ macros.cd_list(cd_list_hdr, cds) }}
 {% endblock %}

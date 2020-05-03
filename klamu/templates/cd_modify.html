@@ -1,11 +1,15 @@
 {% extends "layout.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
+{% import "macros.html" as macros with context %}
 
 {% block page_content %}
 <div class="row">
     <div class="col-md-4">
-        <h1>Gegevens</h1>
-       {{ wtf.quick_form(form, form_type='horizontal') }}
+        <h1>CD Invoeren</h1>
+        {{ wtf.quick_form(form) }}
+    </div>
+    <div class="col-md-8">
+        {{ macros.cd_list(cd_list_hdr, cds) }}
     </div>
 </div>
 {% endblock %}

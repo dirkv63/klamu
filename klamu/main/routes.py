@@ -62,7 +62,7 @@ def show_cd(nid):
     cd = ds.get_cd(nid)
     uitvoeringen = ds.get_cd_uitvoeringen(cd=nid)
     props = dict(
-        hdr=cd.titel,
+        cd_content_hdr=cd.titel,
         cd=cd,
         uitvoeringen=uitvoeringen
     )
@@ -76,7 +76,7 @@ def show_cds(nid=None):
     """
     cds = ds.get_cds(nid)
     props = dict(
-        hdr='Overzicht CDs',
+        cd_list_hdr='Overzicht CDs',
         cds=cds
     )
     return render_template('cds.html', **props)
@@ -147,6 +147,20 @@ def show_uitgevers():
     )
     return render_template('uitgevers.html', **props)
 
+@main.route('/cd/uitvoering/cd=<cid>', methods=['GET', 'POST'])
+@main.route('/cd/uitvoering/uitvoering=<nid>', methods=['GET', 'POST'])
+@login_required
+def update_uitvoering(nid=None, cid=None):
+    if request.method == "GET":
+        cd = ds.get_cd(nid)
+        uitvoeringen = ds.get_cd_uitvoeringen(cd=nid)
+        props = dict(
+            cd_content_hdr=cd.titel,
+            cd=cd,
+            uitvoeringen=uitvoeringen
+        )
+    $$$ Continue from here
+
 @main.route('/cd/update', methods=['GET', 'POST'])
 @main.route('/cd/update/<nid>', methods=['GET', 'POST'])
 @login_required
@@ -177,8 +191,11 @@ def update_cd(nid=None):
         uitgevers = ds.get_uitgever_pairs()
         uitgevers.insert(0, (-1, '(geen uitgever)'))
         form.uitgever.choices = uitgevers
+        cds = ds.get_cds(uitgever_id)
         props = dict(
-            form=form
+            form=form,
+            cd_list_hdr='Overzicht CDs',
+            cds=cds
         )
         return render_template('cd_modify.html', **props)
     else:

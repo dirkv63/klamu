@@ -1,9 +1,103 @@
-{% macro bc(breadcrumb) %}
-    <ol class="breadcrumb">
-    {% for item in breadcrumb: %}
-        <li class="breadcrumb-item"><a href="{{ url_for('main.node', id=item.id) }}">{{ item.content.title }}</a></li>
-    {% endfor %}
-    </ol>
+{% macro cd_content(cd_content_hdr, cd, uitvoeringen) %}
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('main.update_cd', nid=cd.id) }}">
+    {% endif %}
+    <h1>{{ cd_content_hdr }}</h1>
+    {% if current_user.is_authenticated %}
+    </a>
+    {% endif %}
+    Uitgever: {{ cd.uitgever.naam }}<br>
+    Identificatie: {% if cd.identificatie != None %}{{ cd.identificatie }}{% endif %}
+    <div class="row">
+        <div class="col-md-12">
+            <table id="my_table" class="table table-hover">
+                <thead>
+                <tr>
+                    <th>Nr</th>
+                    <th>Naam</th>
+                    <th>Komponist</th>
+                    <th>Uitvoerders</th>
+                    <th>Dirigent</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in uitvoeringen %}
+                    <tr>
+                        <td>
+                            {% if row.volgnummer != None %}
+                                {{ row.volgnummer  }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('main.show_kompositie', nid=row.kompositie.id) }}">
+                                {{ row.kompositie.naam }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('main.show_komponist', nid=row.kompositie.komponist.id) }}">
+                                {{ row.kompositie.komponist.voornaam }} {{ row.kompositie.komponist.naam }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('main.show_uitvoerders_uitvoeringen', nid=row.uitvoerders.id) }}">
+                                {{ row.uitvoerders.naam }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('main.show_dirigent', nid=row.dirigent.id) }}">
+                                {{ row.dirigent.voornaam}} {{ row.dirigent.naam }}
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro cd_list(hdr, cds) %}
+    <h1>{{ cd_list_hdr }}</h1>
+    <div class="row">
+        <div class="col-md-12">
+            <table id="my_table" class="table table-hover">
+                <thead>
+                <tr>
+                    <th>Titel</th>
+                    {% if current_user.is_authenticated %}
+                    <th></th>
+                    {% endif %}
+                    <th>Identificatie</th>
+                    <th>Uitgever</th>
+                    <th>Toegevoegd</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in cds %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('main.show_cd', nid=row.id) }}">{{ row.titel }}</a>
+                        </td>
+                        {% if current_user.is_authenticated %}
+                        <td>
+                            <a href="{{ url_for('main.update_cd', nid=row.id) }}">
+                                <span class="glyphicon glyphicon-edit"></span>
+                            </a>
+                        </td>
+                        {% endif %}
+                        {% if row.identificatie == None %}
+                            <td></td>
+                        {% else %}
+                            <td>{{ row.identificatie }}</td>
+                        {% endif %}
+                        <td>{{ row.uitgever.naam }}</td>
+                        <td>{{ row.created | datestamp }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endmacro %}
 
 {% macro taxonomy(terms) %}
