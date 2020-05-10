@@ -45,18 +45,23 @@ class Cd(Form):
     submit = SubmitField('OK')
     uitgever_mod = SubmitField('Uitgever Aanpassen')
 
+class Komponist(Form):
+    voornaam = StringField('Voornaam')
+    naam = StringField('Naam', validators=[wtv.InputRequired()])
+    submit = SubmitField('OK')
+
 class Uitgever(Form):
     uitgever = StringField('Naam', validators=[wtv.InputRequired()])
     submit = SubmitField('OK')
 
 class Uitvoering(Form):
-    volgnummer = IntegerField('Volgnummer')
+    volgnummer = IntegerField('Volgnummer', render_kw={"size": "4"})
     komponist = SelectField('Komponist', coerce=str)
+    komponist_mod = SubmitField('Komponist Toevoegen')
     kompositie = SelectField('Kompositie', coerce=str)
+    kompositie_mod = SubmitField('Kompositie Toevoegen')
     uitvoerders = SelectField('Uitvoerders', coerce=str)
+    uitvoerders_mod = SubmitField('Uitvoerders Toevoegen')
     dirigent = SelectField('Dirigent', coerce=str)
+    dirigent_mod = SubmitField('Dirigent Toevoegen')
     submit = SubmitField('OK')
-    komponist_mod = SubmitField('Komponist Aanpassen')
-    kompositie_mod = SubmitField('Kompositie Aanpassen')
-    uitvoerders_mod = SubmitField('Uitvoerders Aanpassen')
-    dirigent_mod = SubmitField('Dirigent Aanpassen')

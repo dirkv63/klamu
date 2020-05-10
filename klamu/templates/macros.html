@@ -100,27 +100,28 @@
     </div>
 {% endmacro %}
 
-{% macro taxonomy(terms) %}
-    <ol class="breadcrumb">
-        {% for term in terms: %}
-            <li class="breadcrumb-item"><a href="{{ url_for('main.taxpics', id=term.id) }}">{{ term.name }}</a></li>
-        {% endfor %}
-    </ol>
-{% endmacro %}
-
-{% macro search(searchForm) %}
-    <section>
-        <form action="{{ url_for('main.search') }}" method="post">
-            {{ searchForm.csrf_token }}
-            <div class="input-group input-group-lg tpad">
-                <span class="input-group-addon glyphicon glyphicon-search"></span>
-                <span>
-                    {{ searchForm.search(class_="form-control input-lg", placeholder="Search", required='True') }}
-                </span>
-                <span class="input-group-btn">
-                    {{ searchForm.submit(class="btn btn-default") }}
-                </span>
-            </div>
-        </form>
-    </section>
+{% macro komponisten(hdr, komponisten) %}
+    <div class="row">
+        <h1>{{ hdr }}</h1>
+        <table id="my_table" class="table table-hover">
+            <thead>
+            <tr>
+                <th>Komponist</th>
+                <th>Aantal</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in komponisten %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('main.show_komponist', nid=row.Komponist.id) }}">
+                            {{ row.Komponist.naam }} {{ row.Komponist.voornaam }}
+                        </a>
+                    </td>
+                    <td>{{ row.Cnt }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endmacro %}

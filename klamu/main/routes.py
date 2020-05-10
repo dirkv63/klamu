@@ -114,7 +114,7 @@ def show_komponist(nid):
 def show_komponisten():
     komponisten = ds.get_komponisten()
     props = dict(
-        hdr='Overzicht Komponisten',
+        komponisten_hdr='Overzicht Komponisten',
         komponisten=komponisten
     )
     return render_template('komponisten.html', **props)
@@ -147,6 +147,7 @@ def show_uitgevers():
     )
     return render_template('uitgevers.html', **props)
 
+@main.route('/cd/uitvoering', methods=[])
 @main.route('/cd/uitvoering/cd=<cid>', methods=['GET', 'POST'])
 @main.route('/cd/uitvoering/uitvoering=<nid>', methods=['GET', 'POST'])
 @login_required
@@ -154,12 +155,42 @@ def update_uitvoering(nid=None, cid=None):
     if request.method == "GET":
         cd = ds.get_cd(nid)
         uitvoeringen = ds.get_cd_uitvoeringen(cd=nid)
+        form = forms.Uitvoering(
+            komponist=session.pop('komponist_id', -1),
+            kompositie=session.pop('kompositie_id', -1),
+            uitvoerders=session.pop('uitvoerders_id', -1),
+            dirigent=session.pop('dirigent_id', -1)
+        )
+        res = ds.get_komponist_pairs()
+        res.insert(0, (-1, '(kies komponist)'))
+        form.komponist.choices = res
+        res = ds.get_kompositie_pairs()
+        res.insert(0, (-1, '(kies kompositie )'))
+        form.kompositie.choices = res
+        res = ds.get_uitvoerders_pairs()
+        res.insert(0, (-1, '(geen uitvoerders)'))
+        form.uitvoerders.choices = res
+        res = ds.get_dirigent_pairs()
+        res.insert(0, (-1, '(geen dirigent)'))
+        form.dirigent.choices = res
         props = dict(
             cd_content_hdr=cd.titel,
             cd=cd,
-            uitvoeringen=uitvoeringen
+            uitvoeringen=uitvoeringen,
+            form=form
         )
-    $$$ Continue from here
+        return render_template("uitvoering_modify.html", **props)
+    else:
+        form = forms.Uitvoering()
+        session['komponist_id'] = form.komponist.data
+        session['kompositie_id'] = form.kompositie.data
+        session['uitvoerders_id'] = form.uitvoerders.data
+        session['dirigent_id'] = form.dirigent.data
+        if form.komponist.data:
+            # Komponist toevoegen
+            return redirect(url_for('main.update_komponist', nid=session['komponist_id']))
+        return redirect(url_for("main.index"))
+
 
 @main.route('/cd/update', methods=['GET', 'POST'])
 @main.route('/cd/update/<nid>', methods=['GET', 'POST'])
@@ -217,6 +248,45 @@ def update_cd(nid=None):
                 props['id'] = nid
             nid = Cd.update(**props)
             return redirect(url_for('main.show_cd', nid=nid))
+
+@main.route('/komponist/update', methods=['GET', 'POST'])
+@main.route('/komponist/update/<nid>', methods=['GET', 'POST'])
+@login_required
+def update_komponist(nid='-1'):
+    if nid == '-1':
+        nid = None
+    logging.debug(f"Referrer: {request.referrer}")
+    if url_for('main.update_uitvoering') in request.referrer:
+        session['komponist_referrer'] = request.referrer
+        logging.debug(f"Referrer is toegevoegd.")
+    form = forms.Komponist()
+    if request.method == "GET":
+        if nid:
+            # Update existing Komponist
+            komponist = get_komponist(nid)
+            form.naam.data = komponist.naam
+            form.voornaam.data = komponist.voornaam
+            hdr  = "Komponist Aanpassen"
+        else:
+            hdr = "Komponist Toevoegen"
+        props = dict(
+            hdr=hdr,
+            form=form,
+            komponisten=get_komponisten()
+        )
+        return render_template('komponist_modify.html', **props)
+    else:
+        props = dict(
+            naam=form.naam.data,
+            voornaam = form.voornaam.data
+        )
+        if nid:
+            props['id'] = nid
+        res = Komponist.update(**props)
+        flash(res['msg'], res['status'])
+        session['komponist_id'] = res['nid']
+        next_url = session.pop('komponist_referrer', url_for('main.show_komponisten', nid=res['nid']))
+        return redirect(next_url)
 
 @main.route('/uitgever/update', methods=['GET', 'POST'])
 @main.route('/uitgever/update/<nid>', methods=['GET', 'POST'])

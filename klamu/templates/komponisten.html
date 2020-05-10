@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
+{% import "macros.html" as macros with context %}
 
 {% block scripts %}
     {{ super() }}
@@ -11,29 +11,11 @@
 {% endblock %}
 
 {% block page_content %}
-<h1>{{ hdr }}</h1>
-<div class="row">
-    <div class="col-md-6">
-        <table id="komponisten" class="table table-hover">
-            <thead>
-            <tr>
-                <th>Komponist</th>
-                <th>Aantal</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for row in komponisten %}
-                <tr>
-                    <td>
-                        <a href="{{ url_for('main.show_komponist', nid=row.Komponist.id) }}">
-                            {{ row.Komponist.voornaam }} {{ row.Komponist.naam }}
-                        </a>
-                    </td>
-                    <td>{{ row.Cnt }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            {{ macros.komponisten(komponisten_hdr, komponisten) }}
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -71,6 +71,53 @@ class Komponist(db.Model):
     naam = db.Column(db.Text, nullable=False)
     voornaam = db.Column(db.Text)
 
+    @staticmethod
+    def update(**params):
+        """
+        This method will add or edit the Komponist. It will add only if Komponist naam+voornaam did not exist before.
+
+        :param params: Dictionary with naam, voornaam and optional ID, If ID then update else add Komponist.
+        :return: Dictionary with nid (ID of the komponist), msg and status for flash.
+        """
+        msg = "To be initiated."
+        naam = params['naam']
+        voornaam = params['voornaam']
+        try:
+            check_komponist = Komponist.query.filter(db.func.lower(Komponist.naam)==naam.lower(),
+                                                     db.func.lower(Komponist.voornaam)==voornaam.lower()).one()
+        except NoResultFound:
+            check_id = None
+        except MultipleResultsFound:
+            msg = f"Komponist {voornaam} {naam} is niet uniek!"
+            logging.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        else:
+            check_id = check_komponist.id
+        if 'id' in params:
+            nid = int(params['id'])
+            # Update record
+            komponist = Komponist.query.filter_by(id=nid).one()
+            if check_id:
+                if nid == int(check_id):
+                    msg = f"Komponist {voornaam} {naam} is aangepast."
+                else:
+                    msg = f"Komponist {voornaam} {naam} niet aangepast, bestaat al."
+                    return dict(nid=check_id, msg=msg, status="error")
+            komponist.naam = naam
+            komponist.voornaam = voornaam
+        else:
+            if check_id:
+                msg = f"Uitgever {params['naam']} niet aangepast, bestaat al."
+                return dict(nid=check_id, msg=msg, status="error")
+            else:
+                # Insert new record
+                msg = f"Komponist {voornaam} {naam} is toegevoegd."
+                komponist = Komponist(**params)
+                db.session.add(komponist)
+        db.session.commit()
+        db.session.refresh(komponist)
+        return dict(nid=komponist.id, msg=msg, status="success")
+
 class Kompositie(db.Model):
     """
     Table with Kompositie Information.
@@ -264,6 +311,15 @@ def get_dirigent(nid):
     dirigent = Dirigent.query.filter_by(id=nid).one()
     return dirigent
 
+def get_dirigent_pairs():
+    """
+    Function to return list of dirigenten in pairs dirigent.id, dirigent.voornaam + naam.
+    This can be used in a SelectField.
+    """
+    dirigenten = Dirigent.query.order_by(Dirigent.naam.asc())
+    res = [(dirigent.id, f"{dirigent.voornaam} {dirigent.naam}") for dirigent in dirigenten]
+    return res
+
 def get_dirigenten():
     """
     Function to return list of all Dirigenten and number of Uitvoeringen.
@@ -287,6 +343,15 @@ def get_komponist(nid):
     komponist = Komponist.query.filter_by(id=nid).one()
     return komponist
 
+def get_komponist_pairs():
+    """
+    Function to return list of komponisten in pairs komponist.id, komponist.voornaam + naam.
+    This can be used in a SelectField.
+    """
+    komponisten = Komponist.query.order_by(Komponist.naam.asc())
+    res = [(komponist.id, f"{komponist.voornaam} {komponist.naam}") for komponist in komponisten]
+    return res
+
 def get_komponist_uitvoeringen(komponist_id):
     """
     Function to get uitvoeringen for a komponist.
@@ -309,6 +374,15 @@ def get_komponisten():
 def get_kompositie(nid):
     kompositie = Kompositie.query.filter_by(id=nid).one()
     return kompositie
+
+def get_kompositie_pairs():
+    """
+    Function to return list of kompositie in pairs kompositie.id, kompositie.naam.
+    This can be used in a SelectField.
+    """
+    komposities = Kompositie.query.order_by(Kompositie.naam.asc())
+    res = [(kompositie.id, kompositie.naam) for kompositie in komposities]
+    return res
 
 def get_kompositie_uitvoeringen(kompositie_id):
     """
@@ -386,6 +460,15 @@ def get_uitvoerders():
         .join(Uitvoerders)\
         .group_by(Uitvoering.uitvoerders_id)
     return query.all()
+
+def get_uitvoerders_pairs():
+    """
+    Function to return list of uitvoerders in pairs uitvoerders.id, uitvoerders.naam.
+    This can be used in a SelectField.
+    """
+    uitvoerders = Uitvoerders.query.order_by(Uitvoerders.naam.asc())
+    res = [(uitvoerder.id, uitvoerder.naam) for uitvoerder in uitvoerders]
+    return res
 
 def get_uitvoeringen():
     """
