@@ -102,8 +102,8 @@ def show_dirigenten():
 
 @main.route('/komponist/<nid>')
 def show_komponist(nid):
-    komponist = ds.get_komponist(nid)
-    uitvoeringen = ds.get_komponist_uitvoeringen(nid)
+    komponist = get_komponist(nid)
+    uitvoeringen = get_komponist_uitvoeringen(nid)
     props = dict(
         hdr="{} {}".format(komponist.voornaam, komponist.naam),
         uitvoeringen=uitvoeringen
@@ -147,6 +147,48 @@ def show_uitgevers():
     )
     return render_template('uitgevers.html', **props)
 
+@main.route('/uitvoerders/update', methods=['GET', 'POST'])
+@main.route('/uitvoerders/update/<nid>', methods=['GET', 'POST'])
+@login_required
+def update_uitvoerders(nid='-1'):
+    if nid == '-1':
+        nid = None
+    logging.debug(f"Referrer: {request.referrer}")
+    if url_for('main.update_uitvoering') in request.referrer:
+        session['uitvoerders_referrer'] = request.referrer
+        logging.debug(f"Referrer is toegevoegd.")
+    form = forms.Uitvoerders()
+    if request.method == "GET":
+        if nid:
+            # Update existing Uitvoerders
+            this_uitvoerders = get_uitvoerders_detail(nid)
+            form.uitvoerders.data = this_uitvoerders.naam
+            props = dict(
+                hdr="Uitvoerders Aanpassen",
+                form=form,
+                # uitvoerders=get_uitvoerders(),
+                this_uitvoerders=this_uitvoerders.naam,
+                uitvoeringen=get_uitvoerders_uitvoeringen(nid)
+            )
+        else:
+            props = dict(
+                hdr="Uitvoerders Toevoegen",
+                form=form,
+                uitvoerders=get_uitvoerders()
+            )
+        return render_template('uitvoerders_modify.html', **props)
+    else:
+        props = dict(
+            naam=form.uitvoerders.data,
+        )
+        if nid:
+            props['id'] = nid
+        res = Uitvoerders.update(**props)
+        flash(res['msg'], res['status'])
+        session['uitvoerders_id'] = res['nid']
+        next_url = session.pop('uitvoerders_referrer', url_for('main.show_uitvoerders', nid=res['nid']))
+        return redirect(next_url)
+
 @main.route('/cd/uitvoering', methods=[])
 @main.route('/cd/uitvoering/cd=<cid>', methods=['GET', 'POST'])
 @main.route('/cd/uitvoering/uitvoering=<nid>', methods=['GET', 'POST'])
@@ -186,9 +228,15 @@ def update_uitvoering(nid=None, cid=None):
         session['kompositie_id'] = form.kompositie.data
         session['uitvoerders_id'] = form.uitvoerders.data
         session['dirigent_id'] = form.dirigent.data
-        if form.komponist.data:
-            # Komponist toevoegen
+        if form.komponist_mod.data:
+            # Komponist aanpassen
             return redirect(url_for('main.update_komponist', nid=session['komponist_id']))
+        elif form.uitvoerders_mod.data:
+            # Uitvoerders aanpassen
+            return redirect(url_for('main.update_uitvoerders', nid=session['uitvoerders_id']))
+        elif form.dirigent_mod.data:
+            # Dirigent aanpassen
+            return redirect(url_for('main.update_dirigent', nid=session['dirigent_id']))
         return redirect(url_for("main.index"))
 
 
@@ -249,6 +297,49 @@ def update_cd(nid=None):
             nid = Cd.update(**props)
             return redirect(url_for('main.show_cd', nid=nid))
 
+@main.route('/dirigent/update', methods=['GET', 'POST'])
+@main.route('/dirigent/update/<nid>', methods=['GET', 'POST'])
+@login_required
+def update_dirigent(nid='-1'):
+    if nid == '-1':
+        nid = None
+    logging.debug(f"Referrer: {request.referrer}")
+    if url_for('main.update_uitvoering') in request.referrer:
+        session['dirigent_referrer'] = request.referrer
+        logging.debug(f"Referrer is toegevoegd.")
+    form = forms.Dirigent()
+    if request.method == "GET":
+        if nid:
+            # Update existing Komponist
+            dirigent = get_dirigent(nid)
+            form.naam.data = dirigent.naam
+            form.voornaam.data = dirigent.voornaam
+            props = dict(
+                hdr="Dirigent Aanpassen",
+                form=form,
+                dirigent=dirigent,
+                uitvoeringen=get_dirigent_uitvoeringen(nid)
+            )
+        else:
+            props = dict(
+                hdr="Dirigent Toevoegen",
+                form=form,
+                dirigenten=get_dirigenten()
+            )
+        return render_template('dirigent_modify.html', **props)
+    else:
+        props = dict(
+            naam=form.naam.data,
+            voornaam = form.voornaam.data
+        )
+        if nid:
+            props['id'] = nid
+        res = Dirigent.update(**props)
+        flash(res['msg'], res['status'])
+        session['dirigent_id'] = res['nid']
+        next_url = session.pop('dirigent_referrer', url_for('main.show_dirigenten'))
+        return redirect(next_url)
+
 @main.route('/komponist/update', methods=['GET', 'POST'])
 @main.route('/komponist/update/<nid>', methods=['GET', 'POST'])
 @login_required
@@ -266,14 +357,19 @@ def update_komponist(nid='-1'):
             komponist = get_komponist(nid)
             form.naam.data = komponist.naam
             form.voornaam.data = komponist.voornaam
-            hdr  = "Komponist Aanpassen"
+            props = dict(
+                hdr="Komponist Aanpassen",
+                form=form,
+                # komponisten=get_komponisten(),
+                komponist=komponist,
+                uitvoeringen=get_komponist_uitvoeringen(nid)
+            )
         else:
-            hdr = "Komponist Toevoegen"
-        props = dict(
-            hdr=hdr,
-            form=form,
-            komponisten=get_komponisten()
-        )
+            props = dict(
+                hdr="Komponist Toevoegen",
+                form=form,
+                komponisten=get_komponisten()
+            )
         return render_template('komponist_modify.html', **props)
     else:
         props = dict(

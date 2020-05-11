@@ -1,39 +1,6 @@
 {% extends "layout.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
-
-{% block scripts %}
-    {{ super() }}
-    <script type="text/javascript" class="init">
-    $(document).ready(function() {
-        $('#dirigenten').DataTable();
-    } );
-    </script>
-{% endblock %}
+{% import "macros.html" as macros with context %}
 
 {% block page_content %}
-<h1>{{ hdr }}</h1>
-<div class="row">
-    <div class="col-md-8">
-        <table id="dirigenten" class="table table-hover">
-            <thead>
-            <tr>
-                <th>Dirigent</th>
-                <th>Aantal</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for row in dirigenten %}
-                <tr>
-                    <td>
-                        <a href="{{ url_for('main.show_dirigent', nid=row.Dirigent.id) }}">
-                            {{ row.Dirigent.voornaam }} {{ row.Dirigent.naam }}
-                        </a>
-                    </td>
-                    <td>{{ row.Cnt }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+    {{ macros.dirigenten(hdr, dirigenten) }}
 {% endblock %}

@@ -45,6 +45,11 @@ class Cd(Form):
     submit = SubmitField('OK')
     uitgever_mod = SubmitField('Uitgever Aanpassen')
 
+class Dirigent(Form):
+    voornaam = StringField('Voornaam')
+    naam = StringField('Naam', validators=[wtv.InputRequired()])
+    submit = SubmitField('OK')
+
 class Komponist(Form):
     voornaam = StringField('Voornaam')
     naam = StringField('Naam', validators=[wtv.InputRequired()])
@@ -52,6 +57,10 @@ class Komponist(Form):
 
 class Uitgever(Form):
     uitgever = StringField('Naam', validators=[wtv.InputRequired()])
+    submit = SubmitField('OK')
+
+class Uitvoerders(Form):
+    uitvoerders = StringField('Naam', validators=[wtv.InputRequired()])
     submit = SubmitField('OK')
 
 class Uitvoering(Form):

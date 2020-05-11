@@ -9,10 +9,10 @@
         {{ wtf.quick_form(form) }}
     </div>
     <div class="col-md-8">
-        {% if komponist is defined %}
-            {{ macros.uitvoeringen([komponist.voornaam, komponist.naam]|join(' '), uitvoeringen) }}
+        {% if dirigent is defined %}
+            {{ macros.uitvoeringen([dirigent.voornaam, dirigent.naam]|join(' '), uitvoeringen) }}
         {% else %}
-            {{ macros.komponisten("Overzicht komponisten", komponisten) }}
+            {{ macros.dirigenten("Overzicht dirigenten", dirigenten) }}
         {% endif %}
     </div>
 </div>

@@ -1,6 +1,7 @@
-import logging
+# import logging
 import time
 from klamu import db, lm
+from flask import current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import create_engine
@@ -60,6 +61,54 @@ class Dirigent(db.Model):
     naam = db.Column(db.Text, nullable=False)
     voornaam = db.Column(db.Text)
 
+    @staticmethod
+    def update(**params):
+        """
+        This method will add or edit the Dirigent. It will add only if Dirigent naam+voornaam did not exist before.
+
+        :param params: Dictionary with naam, voornaam and optional ID, If ID then update else add Dirigent.
+        :return: Dictionary with nid (ID of the dirigent), msg and status for flash.
+        """
+        naam = params['naam']
+        voornaam = params['voornaam']
+        try:
+            check_dirigent = Dirigent.query.filter(db.func.lower(Dirigent.naam)==naam.lower(),
+                                                   db.func.lower(Dirigent.voornaam)==voornaam.lower()).one()
+        except NoResultFound:
+            check_id = None
+        except MultipleResultsFound:
+            msg = f"Dirigent {voornaam} {naam} is niet uniek!"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        else:
+            check_id = check_dirigent.id
+        if 'id' in params:
+            nid = int(params['id'])
+            # Update record
+            dirigent = Dirigent.query.filter_by(id=nid).one()
+            if check_id:
+                if nid == int(check_id):
+                    msg = f"Dirigent {voornaam} {naam} is niet veranderd."
+                else:
+                    msg = f"Dirigent {voornaam} {naam} niet aangepast, bestaat al."
+                    return dict(nid=check_id, msg=msg, status="error")
+            else:
+                msg = f"Dirigent {voornaam} {naam} is aangepast."
+            dirigent.naam = naam
+            dirigent.voornaam = voornaam
+        else:
+            if check_id:
+                msg = f"Dirigent {voornaam} {naam} niet aangepast, bestaat al."
+                return dict(nid=check_id, msg=msg, status="error")
+            else:
+                # Insert new record
+                msg = f"Dirigent {voornaam} {naam} is toegevoegd."
+                dirigent = Dirigent(**params)
+                db.session.add(dirigent)
+        db.session.commit()
+        db.session.refresh(dirigent)
+        return dict(nid=dirigent.id, msg=msg, status="success")
+
 class Komponist(db.Model):
     """"
     Table with Komponist Information
@@ -79,7 +128,6 @@ class Komponist(db.Model):
         :param params: Dictionary with naam, voornaam and optional ID, If ID then update else add Komponist.
         :return: Dictionary with nid (ID of the komponist), msg and status for flash.
         """
-        msg = "To be initiated."
         naam = params['naam']
         voornaam = params['voornaam']
         try:
@@ -89,7 +137,7 @@ class Komponist(db.Model):
             check_id = None
         except MultipleResultsFound:
             msg = f"Komponist {voornaam} {naam} is niet uniek!"
-            logging.error(msg)
+            current_app.logger.error(msg)
             return dict(nid=-1, msg=msg, status="error")
         else:
             check_id = check_komponist.id
@@ -99,15 +147,17 @@ class Komponist(db.Model):
             komponist = Komponist.query.filter_by(id=nid).one()
             if check_id:
                 if nid == int(check_id):
-                    msg = f"Komponist {voornaam} {naam} is aangepast."
+                    msg = f"Komponist {voornaam} {naam} is niet veranderd."
                 else:
                     msg = f"Komponist {voornaam} {naam} niet aangepast, bestaat al."
                     return dict(nid=check_id, msg=msg, status="error")
+            else:
+                msg = f"Komponist {voornaam} {naam} is aangepast."
             komponist.naam = naam
             komponist.voornaam = voornaam
         else:
             if check_id:
-                msg = f"Uitgever {params['naam']} niet aangepast, bestaat al."
+                msg = f"Komponist {voornaam} {naam} niet aangepast, bestaat al."
                 return dict(nid=check_id, msg=msg, status="error")
             else:
                 # Insert new record
@@ -144,14 +194,13 @@ class Uitgever(db.Model):
         :param params: Dictionary with naam and optional ID, If ID then update else add Uitgever.
         :return: Dictionary with nid (ID of the uitgever), msg and status for flash.
         """
-        msg = "To be initiated."
         try:
             check_uitgever = Uitgever.query.filter(db.func.lower(Uitgever.naam)==params['naam'].lower()).one()
         except NoResultFound:
             check_id = None
         except MultipleResultsFound:
             msg = f"Uitgever {params['naam']} is niet uniek!"
-            logging.error(msg)
+            current_app.logger.error(msg)
             return dict(nid=-1, msg=msg, status="error")
         else:
             check_id = check_uitgever.id
@@ -161,10 +210,12 @@ class Uitgever(db.Model):
             uitgever = Uitgever.query.filter_by(id=params['id']).one()
             if check_id:
                 if nid == int(check_id):
-                    msg = f"Uitgever {params['naam']} is aangepast."
+                    msg = f"Uitgever {params['naam']} is niet veranderd."
                 else:
                     msg = f"Uitgever {params['naam']} niet aangepast, bestaat al."
                     return dict(nid=check_id, msg=msg, status="error")
+            else:
+                msg = f"Uitgever {params['naam']} is aangepast."
             uitgever.naam = params["naam"]
         else:
             if check_id:
@@ -186,6 +237,51 @@ class Uitvoerders(db.Model):
     __tablename = "uitvoerders"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
+
+    @staticmethod
+    def update(**params):
+        """
+        This method will add or edit the Uitvoerders. It will add only if Uitvoerders naam did not exist before.
+
+        :param params: Dictionary with naam and optional ID, If ID then update else add Uitvoerders.
+        :return: Dictionary with nid (ID of the uitvoerders), msg and status for flash.
+        """
+        naam = params['naam']
+        try:
+            check_uitvoerders = Uitvoerders.query.filter(db.func.lower(Uitvoerders.naam)==naam.lower()).one()
+        except NoResultFound:
+            check_id = None
+        except MultipleResultsFound:
+            msg = f"Uitvoerders {naam} is niet uniek!"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        else:
+            check_id = check_uitvoerders.id
+        if 'id' in params:
+            nid = int(params['id'])
+            # Update record
+            uitvoerders = Uitvoerders.query.filter_by(id=nid).one()
+            if check_id:
+                if nid == int(check_id):
+                    msg = f"Uitvoerders {naam} is niet veranderd."
+                else:
+                    msg = f"Uitvoerders {naam} niet aangepast, bestaat al."
+                    return dict(nid=check_id, msg=msg, status="error")
+            else:
+                msg = f"Uitvoerders {naam} is aangepast."
+            uitvoerders.naam = naam
+        else:
+            if check_id:
+                msg = f"Uitvoerders {naam} niet aangepast, bestaat al."
+                return dict(nid=check_id, msg=msg, status="error")
+            else:
+                # Insert new record
+                msg = f"Uitvoerders {naam} is toegevoegd."
+                uitvoerders = Uitvoerders(**params)
+                db.session.add(uitvoerders)
+        db.session.commit()
+        db.session.refresh(uitvoerders)
+        return dict(nid=uitvoerders.id, msg=msg, status="success")
 
 class Uitvoering(db.Model):
     """
@@ -328,6 +424,8 @@ def get_dirigenten():
         .join(Dirigent) \
         .group_by(Uitvoering.dirigent_id) \
         .order_by(db.func.count(Uitvoering.id).desc())
+    # right_query = Dirigent.query.join(Uitvoering).filter()
+    current_app.logger.info(str(query))
     return query
 
 def get_dirigent_uitvoeringen(dirigent_id):

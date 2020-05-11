@@ -100,6 +100,32 @@
     </div>
 {% endmacro %}
 
+{% macro dirigenten(hdr, dirigenten) %}
+    <div class="row">
+        <h1>{{ hdr }}</h1>
+        <table id="my_table" class="table table-hover">
+            <thead>
+            <tr>
+                <th>Dirigent</th>
+                <th>Aantal</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in dirigenten %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('main.show_dirigent', nid=row.Dirigent.id) }}">
+                            {{ row.Dirigent.voornaam }} {{ row.Dirigent.naam }}
+                        </a>
+                    </td>
+                    <td>{{ row.Cnt }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endmacro %}
+
 {% macro komponisten(hdr, komponisten) %}
     <div class="row">
         <h1>{{ hdr }}</h1>
@@ -119,6 +145,86 @@
                         </a>
                     </td>
                     <td>{{ row.Cnt }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endmacro %}
+
+{% macro uitvoerders(hdr, uitvoerders) %}
+    <div class="row">
+        <h1>{{ hdr }}</h1>
+        <table id="my_table" class="table table-hover">
+            <thead>
+            <tr>
+                <th>Uitvoerders</th>
+                <th>Aantal</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in uitvoerders %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('main.show_uitvoerders_uitvoeringen', nid=row.Uitvoerders.id) }}">
+                            {{ row.Uitvoerders.naam }}
+                        </a>
+                    </td>
+                    <td>{{ row.Cnt }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endmacro %}
+
+{% macro uitvoeringen(hdr, uitvoeringen) %}
+    <div class="row">
+        <h1>{{ hdr }}</h1>
+        <table id="my_table" class="table table-hover">
+            <thead>
+            <tr>
+                <th>CD</th>
+                <th>Nr</th>
+                <th>Kompositie</th>
+                <th>Komponist</th>
+                <th>Uitvoerders</th>
+                <th>Dirigent</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in uitvoeringen %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('main.show_cd', nid=row.cd.id) }}">
+                            {{ row.cd.titel }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if row.volgnummer != None %}
+                            {{ row.volgnummer }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.show_kompositie', nid=row.kompositie.id) }}">
+                            {{ row.kompositie.naam }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.show_komponist', nid=row.kompositie.komponist.id) }}">
+                            {{ row.kompositie.komponist.voornaam }} {{ row.kompositie.komponist.naam }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.show_uitvoerders_uitvoeringen', nid=row.uitvoerders.id) }}">
+                            {{ row.uitvoerders.naam }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.show_dirigent', nid=row.dirigent.id) }}">
+                            {{ row.dirigent.voornaam}} {{ row.dirigent.naam }}
+                        </a>
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>
