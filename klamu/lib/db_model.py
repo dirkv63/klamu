@@ -23,6 +23,36 @@ class Cd(db.Model):
     uitgever = db.relationship("Uitgever", backref='cd')
 
     @staticmethod
+    def delete(nid):
+        """
+        This method will delete the CD on condition that there is no link to uitvoeringen.
+
+        :param nid: Id of the cd.
+        :return: Dictionary with nid (ID of the cd), msg and status for flash.
+        """
+        try:
+            query = db.session.query(Cd, db.func.count(Uitvoering.id).label("Cnt")) \
+                .outerjoin(Uitvoering)\
+                .filter(Cd.id == nid)\
+                .group_by(Uitvoering.cd_id).one()
+        except NoResultFound:
+            msg = f"CD (id: {nid}) is niet gevonden!"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        cnt = query.Cnt
+        cd = query.Cd
+        if cnt == 0:
+            msg = f"CD {cd.titel} is verwijderd."
+            current_app.logger.info(msg)
+            db.session.delete(cd)
+            db.session.commit()
+            return dict(nid=-1, msg=msg, status="success")
+        else:
+            msg = f"CD {cd.titel} is nog verbonden met {cnt} uitvoering(en)."
+            current_app.logger.info(msg)
+            return dict(nid=nid, msg=msg, status="error")
+
+    @staticmethod
     def update(**params):
         """
         This method will add or edit the CD.
@@ -60,6 +90,36 @@ class Dirigent(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
     voornaam = db.Column(db.Text)
+
+    @staticmethod
+    def delete(nid):
+        """
+        This method will delete the Dirigent on condition that there is no link to uitvoeringen.
+
+        :param nid: Id of the dirigent.
+        :return: Dictionary with nid (ID of the dirigent), msg and status for flash.
+        """
+        try:
+            query = db.session.query(Dirigent, db.func.count(Uitvoering.id).label("Cnt")) \
+                .outerjoin(Uitvoering)\
+                .filter(Dirigent.id == nid)\
+                .group_by(Uitvoering.dirigent_id).one()
+        except NoResultFound:
+            msg = f"Dirigent (id: {nid}) is niet gevonden!"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        cnt = query.Cnt
+        dirigent = query.Dirigent
+        if cnt == 0:
+            msg = f"Dirigent {dirigent.voornaam} {dirigent.naam} is verwijderd."
+            current_app.logger.info(msg)
+            db.session.delete(dirigent)
+            db.session.commit()
+            return dict(nid=-1, msg=msg, status="success")
+        else:
+            msg = f"Dirigent {dirigent.voornaam} {dirigent.naam} is nog verbonden met {cnt} uitvoering(en)."
+            current_app.logger.info(msg)
+            return dict(nid=nid, msg=msg, status="error")
 
     @staticmethod
     def update(**params):
@@ -119,6 +179,36 @@ class Komponist(db.Model):
     modified = db.Column(db.Integer, nullable=False)
     naam = db.Column(db.Text, nullable=False)
     voornaam = db.Column(db.Text)
+
+    @staticmethod
+    def delete(nid):
+        """
+        This method will delete the Komponist on condition that there is no link to komposities.
+
+        :param nid: Id of the komponist.
+        :return: Dictionary with nid (ID of the komponist), msg and status for flash.
+        """
+        try:
+            query = db.session.query(Komponist, db.func.count(Kompositie.id).label("Cnt")) \
+                .outerjoin(Kompositie)\
+                .filter(Komponist.id == nid)\
+                .group_by(Kompositie.komponist_id).one()
+        except NoResultFound:
+            msg = f"Komponist (id: {nid}) is niet gevonden!"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        cnt = query.Cnt
+        komponist = query.Komponist
+        if cnt == 0:
+            msg = f"Komponist {komponist.voornaam} {komponist.naam} verwijderd."
+            current_app.logger.info(msg)
+            db.session.delete(komponist)
+            db.session.commit()
+            return dict(nid=-1, msg=msg, status="success")
+        else:
+            msg = f"Komponist {komponist.voornaam} {komponist.naam} nog verbonden met {cnt} uitvoering(en)."
+            current_app.logger.info(msg)
+            return dict(nid=nid, msg=msg, status="error")
 
     @staticmethod
     def update(**params):
@@ -187,6 +277,36 @@ class Uitgever(db.Model):
     naam = db.Column(db.Text, nullable=False)
 
     @staticmethod
+    def delete(nid):
+        """
+        This method will delete the Uitgever on condition that there is no link to CDs.
+
+        :param nid: Id of the uitgever.
+        :return: Dictionary with nid (ID of the uitgever), msg and status for flash.
+        """
+        try:
+            query = db.session.query(Uitgever, db.func.count(Cd.id).label("Cnt")) \
+                .outerjoin(Cd)\
+                .filter(Uitgever.id == nid)\
+                .group_by(Cd.uitgever_id).one()
+        except NoResultFound:
+            msg = f"Uitgever (id: {nid}) is niet gevonden!"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        cnt = query.Cnt
+        uitgever = query.Uitgever
+        if cnt == 0:
+            msg = f"Uitgever {uitgever.naam} verwijderd."
+            current_app.logger.info(msg)
+            db.session.delete(uitgever)
+            db.session.commit()
+            return dict(nid=-1, msg=msg, status="success")
+        else:
+            msg = f"Uitgever {uitgever.naam} nog verbonden met {cnt} cd(s)."
+            current_app.logger.info(msg)
+            return dict(nid=nid, msg=msg, status="error")
+
+    @staticmethod
     def update(**params):
         """
         This method will add or edit the Uitgever. It will add only if Uitgever naam did not exist before.
@@ -237,6 +357,36 @@ class Uitvoerders(db.Model):
     __tablename = "uitvoerders"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
+
+    @staticmethod
+    def delete(nid):
+        """
+        This method will delete the Uitvoerders on condition that there is no link to uitvoeringen.
+
+        :param nid: Id of the uitvoerders.
+        :return: Dictionary with nid (ID of the uitvoerders), msg and status for flash.
+        """
+        try:
+            query = db.session.query(Uitvoerders, db.func.count(Uitvoering.id).label("Cnt")) \
+                .outerjoin(Uitvoering)\
+                .filter(Uitvoerders.id == nid)\
+                .group_by(Uitvoering.uitvoerders_id).one()
+        except NoResultFound:
+            msg = f"Uitvoerders (id: {nid}) is niet gevonden!"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        cnt = query.Cnt
+        uitvoerders = query.Uitvoerders
+        if cnt == 0:
+            msg = f"Uitvoerders {uitvoerders.naam} verwijderd."
+            current_app.logger.info(msg)
+            db.session.delete(uitvoerders)
+            db.session.commit()
+            return dict(nid=-1, msg=msg, status="success")
+        else:
+            msg = f"Uitvoerders {uitvoerders.naam} nog verbonden met {cnt} uitvoering(en)."
+            current_app.logger.info(msg)
+            return dict(nid=nid, msg=msg, status="error")
 
     @staticmethod
     def update(**params):
@@ -420,12 +570,8 @@ def get_dirigenten():
     """
     Function to return list of all Dirigenten and number of Uitvoeringen.
     """
-    query = db.session.query(db.func.count(Uitvoering.id).label("Cnt"), Dirigent) \
-        .join(Dirigent) \
-        .group_by(Uitvoering.dirigent_id) \
-        .order_by(db.func.count(Uitvoering.id).desc())
-    # right_query = Dirigent.query.join(Uitvoering).filter()
-    current_app.logger.info(str(query))
+    query = db.session.query(Dirigent, db.func.count(Uitvoering.id).label("Cnt"))\
+        .outerjoin(Uitvoering).group_by(Uitvoering.dirigent_id)
     return query
 
 def get_dirigent_uitvoeringen(dirigent_id):
@@ -463,10 +609,8 @@ def get_komponisten():
     """
     Function to return list of all Komponisten and number of Komposities.
     """
-    query = db.session.query(db.func.count(Kompositie.id).label("Cnt"), Komponist) \
-        .join(Komponist) \
-        .group_by(Kompositie.komponist_id) \
-        .order_by(db.func.count(Kompositie.id).desc())
+    query = db.session.query(Komponist, db.func.count(Kompositie.id).label("Cnt")) \
+        .outerjoin(Kompositie).group_by(Kompositie.komponist_id)
     return query
 
 def get_kompositie(nid):
@@ -495,9 +639,8 @@ def get_komposities():
     """
     Function to return list of all komposities.
     """
-    query = db.session.query(db.func.count(Uitvoering.id).label("Cnt"), Kompositie) \
-        .join(Kompositie) \
-        .group_by(Uitvoering.kompositie_id)
+    query = db.session.query(Kompositie, db.func.count(Uitvoering.id).label("Cnt")) \
+        .outerjoin(Uitvoering).group_by(Uitvoering.kompositie_id)
     return query
 
 def get_cd_uitvoeringen(cd):
@@ -527,9 +670,8 @@ def get_uitgevers():
     """
     Function to return list of all Uitgevers.
     """
-    query = db.session.query(db.func.count(Cd.id).label("Cnt"), Uitgever) \
-        .join(Uitgever)\
-        .group_by(Cd.uitgever_id)
+    query = db.session.query(Uitgever, db.func.count(Cd.id).label("Cnt")) \
+        .outerjoin(Cd).group_by(Cd.uitgever_id)
     return query.all()
 
 def get_uitvoerders_detail(uitvoerders_id):
@@ -554,9 +696,8 @@ def get_uitvoerders():
     """
     Function to return list of all Uitvoerders.
     """
-    query = db.session.query(db.func.count(Uitvoering.id).label("Cnt"), Uitvoerders) \
-        .join(Uitvoerders)\
-        .group_by(Uitvoering.uitvoerders_id)
+    query = db.session.query(Uitvoerders, db.func.count(Uitvoering.id).label("Cnt")) \
+        .outerjoin(Uitvoering).group_by(Uitvoering.uitvoerders_id)
     return query.all()
 
 def get_uitvoerders_pairs():

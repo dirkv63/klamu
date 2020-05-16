@@ -9,7 +9,12 @@
         {{ wtf.quick_form(form) }}
     </div>
     <div class="col-md-8">
-        {{ macros.cd_list(cd_list_hdr, cds) }}
+        {% if uitvoeringen is defined %}
+            {{ macros.cd_content(cd.titel, cd, uitvoeringen) }}
+        {% else %}
+            {{ macros.cd_list(cd_list_hdr, cds) }}
+        {% endif %}
+
     </div>
 </div>
 {% endblock %}

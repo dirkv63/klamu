@@ -52,6 +52,66 @@ def index():
 def page_not_found(e):
     return render_template("404.html", err=e)
 
+@main.route('/cd/delete/<nid>', methods=['GET'])
+@login_required
+def delete_cd(nid):
+    current_app.logger.debug(f"Referrer: {request.referrer}")
+    res = Cd.delete(nid)
+    if int(res['nid']) > 0:
+        next_url = url_for('main.show_cd', nid=res['nid'])
+    else:
+        next_url = request.referrer
+    flash(res['msg'], res['status'])
+    return redirect(next_url)
+
+@main.route('/dirigent/delete/<nid>', methods=['GET'])
+@login_required
+def delete_dirigent(nid):
+    current_app.logger.debug(f"Referrer: {request.referrer}")
+    res = Dirigent.delete(nid)
+    if int(res['nid']) > 0:
+        next_url = url_for('main.show_dirigent', nid=res['nid'])
+    else:
+        next_url = request.referrer
+    flash(res['msg'], res['status'])
+    return redirect(next_url)
+
+@main.route('/komponist/delete/<nid>', methods=['GET'])
+@login_required
+def delete_komponist(nid):
+    current_app.logger.debug(f"Referrer: {request.referrer}")
+    res = Komponist.delete(nid)
+    if int(res['nid']) > 0:
+        next_url = url_for('main.show_komponist', nid=res['nid'])
+    else:
+        next_url = request.referrer
+    flash(res['msg'], res['status'])
+    return redirect(next_url)
+
+@main.route('/uitgever/delete/<nid>', methods=['GET'])
+@login_required
+def delete_uitgever(nid):
+    current_app.logger.debug(f"Referrer: {request.referrer}")
+    res = Uitvoerders.delete(nid)
+    if int(res['nid']) > 0:
+        next_url = url_for('main.show_cds', nid=res['nid'])
+    else:
+        next_url = request.referrer
+    flash(res['msg'], res['status'])
+    return redirect(next_url)
+
+@main.route('/uitvoerders/delete/<nid>', methods=['GET'])
+@login_required
+def delete_uitvoerders(nid):
+    current_app.logger.debug(f"Referrer: {request.referrer}")
+    res = Uitvoerders.delete(nid)
+    if int(res['nid']) > 0:
+        next_url = url_for('main.show_uitvoerders_uitvoeringen', nid=res['nid'])
+    else:
+        next_url = request.referrer
+    flash(res['msg'], res['status'])
+    return redirect(next_url)
+
 @main.route('/cd/<nid>')
 def show_cd(nid):
     """
@@ -153,10 +213,10 @@ def show_uitgevers():
 def update_uitvoerders(nid='-1'):
     if nid == '-1':
         nid = None
-    logging.debug(f"Referrer: {request.referrer}")
+    current_app.logger.debug(f"Referrer: {request.referrer}")
     if url_for('main.update_uitvoering') in request.referrer:
         session['uitvoerders_referrer'] = request.referrer
-        logging.debug(f"Referrer is toegevoegd.")
+        current_app.logger.debug(f"Referrer is toegevoegd.")
     form = forms.Uitvoerders()
     if request.method == "GET":
         if nid:
@@ -276,6 +336,9 @@ def update_cd(nid=None):
             cd_list_hdr='Overzicht CDs',
             cds=cds
         )
+        if nid:
+            props['uitvoeringen'] = get_cd_uitvoeringen(nid)
+            props['cd'] = get_cd(nid)
         return render_template('cd_modify.html', **props)
     else:
         form = forms.Cd()
@@ -303,10 +366,10 @@ def update_cd(nid=None):
 def update_dirigent(nid='-1'):
     if nid == '-1':
         nid = None
-    logging.debug(f"Referrer: {request.referrer}")
+    current_app.logger.debug(f"Referrer: {request.referrer}")
     if url_for('main.update_uitvoering') in request.referrer:
         session['dirigent_referrer'] = request.referrer
-        logging.debug(f"Referrer is toegevoegd.")
+        current_app.logger.debug(f"Referrer is toegevoegd.")
     form = forms.Dirigent()
     if request.method == "GET":
         if nid:
@@ -346,10 +409,10 @@ def update_dirigent(nid='-1'):
 def update_komponist(nid='-1'):
     if nid == '-1':
         nid = None
-    logging.debug(f"Referrer: {request.referrer}")
+    current_app.logger.debug(f"Referrer: {request.referrer}")
     if url_for('main.update_uitvoering') in request.referrer:
         session['komponist_referrer'] = request.referrer
-        logging.debug(f"Referrer is toegevoegd.")
+        current_app.logger.debug(f"Referrer is toegevoegd.")
     form = forms.Komponist()
     if request.method == "GET":
         if nid:

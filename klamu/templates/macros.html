@@ -2,9 +2,19 @@
     {% if current_user.is_authenticated %}
     <a href="{{ url_for('main.update_cd', nid=cd.id) }}">
     {% endif %}
-    <h1>{{ cd_content_hdr }}</h1>
+    <h1>
+        {{ cd_content_hdr }}
+        {% if current_user.is_authenticated %}
+            {% if uitvoeringen.count() == 0 %}
+                <a href="{{ url_for('main.delete_cd', nid=cd.id) }}">
+                    <span class="glyphicon glyphicon-trash"></span>
+                </a>
+            {% endif %}
+        {% endif %}
+    </h1>
     {% if current_user.is_authenticated %}
     </a>
+
     {% endif %}
     Uitgever: {{ cd.uitgever.naam }}<br>
     Identificatie: {% if cd.identificatie != None %}{{ cd.identificatie }}{% endif %}
@@ -90,7 +100,11 @@
                         {% else %}
                             <td>{{ row.identificatie }}</td>
                         {% endif %}
-                        <td>{{ row.uitgever.naam }}</td>
+                        <td>
+                            <a href="{{ url_for('main.show_cds', nid=row.uitgever.id) }}">
+                                {{ row.uitgever.naam }}
+                            </a>
+                        </td>
                         <td>{{ row.created | datestamp }}</td>
                     </tr>
                 {% endfor %}
@@ -117,6 +131,13 @@
                         <a href="{{ url_for('main.show_dirigent', nid=row.Dirigent.id) }}">
                             {{ row.Dirigent.voornaam }} {{ row.Dirigent.naam }}
                         </a>
+                        {% if current_user.is_authenticated %}
+                            {% if row.Cnt == 0 %}
+                                <a href="{{ url_for('main.delete_dirigent', nid=row.Dirigent.id) }}">
+                                    <span class="glyphicon glyphicon-trash"></span>
+                                </a>
+                            {% endif %}
+                        {% endif %}
                     </td>
                     <td>{{ row.Cnt }}</td>
                 </tr>
@@ -143,6 +164,13 @@
                         <a href="{{ url_for('main.show_komponist', nid=row.Komponist.id) }}">
                             {{ row.Komponist.naam }} {{ row.Komponist.voornaam }}
                         </a>
+                        {% if current_user.is_authenticated %}
+                            {% if row.Cnt == 0 %}
+                                <a href="{{ url_for('main.delete_komponist', nid=row.Komponist.id) }}">
+                                    <span class="glyphicon glyphicon-trash"></span>
+                                </a>
+                            {% endif %}
+                        {% endif %}
                     </td>
                     <td>{{ row.Cnt }}</td>
                 </tr>
@@ -169,6 +197,13 @@
                         <a href="{{ url_for('main.show_uitvoerders_uitvoeringen', nid=row.Uitvoerders.id) }}">
                             {{ row.Uitvoerders.naam }}
                         </a>
+                        {% if current_user.is_authenticated %}
+                            {% if row.Cnt == 0 %}
+                                <a href="{{ url_for('main.delete_uitvoerders', nid=row.Uitvoerders.id) }}">
+                                    <span class="glyphicon glyphicon-trash"></span>
+                                </a>
+                            {% endif %}
+                        {% endif %}
                     </td>
                     <td>{{ row.Cnt }}</td>
                 </tr>
