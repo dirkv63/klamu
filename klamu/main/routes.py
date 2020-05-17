@@ -453,20 +453,23 @@ def update_komponist(nid='-1'):
 def update_uitgever(nid='-1'):
     if nid == '-1':
         nid = None
-    flash(f"Referrer: {request.referrer}", 'message')
+    current_app.logger.debug(f"Referrer: {request.referrer}")
     if url_for('main.update_cd') in request.referrer:
         session['uitgever_referrer'] = request.referrer
-        flash(f"Referrer is toegevoegd.", "success")
     if request.method == "GET":
         form = forms.Uitgever()
-        if nid:
-            # Update existing Uitgever
-            uitgever = get_uitgever(nid)
-            form.uitgever.data = uitgever.naam
         props = dict(
             hdr='Uitgever Toevoegen',
             form=form
         )
+        if nid:
+            # Update existing Uitgever
+            uitgever = get_uitgever(nid)
+            form.uitgever.data = uitgever.naam
+            props['cds'] = get_cds(nid)
+            props['uitgever'] = uitgever.naam
+        else:
+            props['uitgevers'] = get_uitgevers()
         return render_template('uitgever_modify.html', **props)
     else:
         form = forms.Uitgever()

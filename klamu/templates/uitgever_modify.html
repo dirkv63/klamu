@@ -1,11 +1,19 @@
 {% extends "layout.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
+{% import "macros.html" as macros with context %}
 
 {% block page_content %}
 <div class="row">
     <div class="col-md-4">
         <h1>Uitgever Aanpassen</h1>
        {{ wtf.quick_form(form) }}
+    </div>
+    <div class="col-md-8">
+        {% if cds is defined %}
+            {{ macros.cd_list(uitgever, cds) }}
+        {% else %}
+            {{ macros.uitgevers("Overzicht uitgevers", uitgevers) }}
+        {% endif %}
     </div>
 </div>
 {% endblock %}

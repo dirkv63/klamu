@@ -67,7 +67,7 @@
 {% endmacro %}
 
 {% macro cd_list(hdr, cds) %}
-    <h1>{{ cd_list_hdr }}</h1>
+    <h1>{{ hdr }}</h1>
     <div class="row">
         <div class="col-md-12">
             <table id="my_table" class="table table-hover">
@@ -171,6 +171,32 @@
                                 </a>
                             {% endif %}
                         {% endif %}
+                    </td>
+                    <td>{{ row.Cnt }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endmacro %}
+
+{% macro uitgevers(hdr, uitgevers) %}
+    <div class="row">
+        <h1>{{ hdr }}</h1>
+        <table id="my_table" class="table table-hover">
+            <thead>
+            <tr>
+                <th>Uitgever</th>
+                <th>Aantal</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in uitgevers %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('main.show_cds', nid=row.Uitgever.id) }}">
+                            {{ row.Uitgever.naam }}
+                        </a>
                     </td>
                     <td>{{ row.Cnt }}</td>
                 </tr>
