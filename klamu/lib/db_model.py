@@ -268,6 +268,33 @@ class Kompositie(db.Model):
     komponist_id = db.Column(db.Integer, db.ForeignKey('komponist.id'))
     komponist = db.relationship('Komponist', backref='kompositie')
 
+    @staticmethod
+    def update(**params):
+        """
+        This method will add or edit the Kompositie.
+
+        :param params: Dictionary with uitvoering and kompositie attributes.
+        :return: Dictionary with nid (ID of the uitvoering), msg and status for flash.
+        """
+        if params['komponist_id'] == -1:
+            # Komponist Not set, use 'Anoniem'.
+            params['komponist_id'] = 500
+        if 'id' in params:
+            nid = int(params['id'])
+            # Update record
+            kompositie = Kompositie.query.filter_by(id=nid).one()
+            kompositie.naam = params['naam']
+            kompositie.komponist_id = params['komponist_id']
+            msg = "Kompositie is aangepast."
+        else:
+            # Insert new record
+            msg = "Kompositie is toegevoegd."
+            kompositie = Kompositie(**params)
+            db.session.add(kompositie)
+        db.session.commit()
+        db.session.refresh(kompositie)
+        return dict(nid=kompositie.id, msg=msg, status="success")
+
 class Uitgever(db.Model):
     """
     Table with Uitgever Information
@@ -451,6 +478,40 @@ class Uitvoering(db.Model):
     kompositie_id = db.Column(db.Integer, db.ForeignKey('kompositie.id'), nullable=False)
     kompositie = db.relationship('Kompositie', backref='uitvoering')
 
+    @staticmethod
+    def update(**params):
+        """
+        This method will add or edit the Uitvoering.
+
+        :param params: Dictionary with uitvoering and kompositie attributes.
+        :return: Dictionary with nid (ID of the uitvoering), msg and status for flash.
+        """
+        now = int(time.time())
+        params['modified'] = now
+        if params['uitvoerders_id'] == -1:
+            params['uitvoerders_id'] = None
+        if params['dirigent_id'] == -1:
+            params['dirigent_id'] = None
+        if 'id' in params:
+            nid = int(params['id'])
+            # Update record
+            uitvoering = Uitvoering.query.filter_by(id=nid).one()
+            uitvoering.volgnummer = params['volgnummer']
+            uitvoering.cd_id = params['cd_id']
+            uitvoering.uitvoerders_id = params['uitvoerders_id']
+            uitvoering.dirigent_id = params['dirigent_id']
+            uitvoering.kompositie_id = params['kompositie_id']
+            msg = "Uitvoering is aangepast."
+        else:
+            # Insert new record
+            msg = "Uitvoering is toegevoegd."
+            params['created'] = now
+            uitvoering = Uitvoerders(**params)
+            db.session.add(uitvoering)
+        db.session.commit()
+        db.session.refresh(uitvoering)
+        return dict(nid=uitvoering.id, msg=msg, status="success")
+
 class History(db.Model):
     """
     Table remembering which node is selected when.
@@ -617,6 +678,10 @@ def get_kompositie(nid):
     kompositie = Kompositie.query.filter_by(id=nid).one()
     return kompositie
 
+def get_komposities_for_komponist(nid):
+    komposities = Kompositie.query.filter_by(komponist_id=nid)
+    return komposities
+
 def get_kompositie_pairs():
     """
     Function to return list of kompositie in pairs kompositie.id, kompositie.naam.
@@ -651,6 +716,35 @@ def get_cd_uitvoeringen(cd):
     """
     uitvoeringen = Uitvoering.query.filter_by(cd_id=cd)
     return uitvoeringen
+
+def get_last_uitvoering(cd):
+    """
+    Function to return the last uitvoering on a CD.
+
+    :param cd: Id of the CD
+    """
+    uitvoering = Uitvoering.query.filter_by(cd_id=cd).order_by(Uitvoering.volgnummer.desc()).first()
+    if uitvoering:
+        if uitvoering.kompositie_id:
+            kompositie = get_kompositie(uitvoering.kompositie_id)
+        else:
+            kompositie = None
+        uitvoering_dict = dict(
+            volgnummer=uitvoering.volgnummer or 0,
+            uitvoerders_id=uitvoering.uitvoerders_id or -1,
+            dirigent_id=uitvoering.dirigent_id or -1,
+            kompositie_id=uitvoering.kompositie_id or -1,
+            komponist_id=kompositie.komponist_id or -1
+        )
+    else:
+        uitvoering_dict = dict(
+            volgnummer=0,
+            uitvoerders_id=-1,
+            dirigent_id=-1,
+            kompositie_id=-1,
+            komponist_id=-1
+        )
+    return uitvoering_dict
 
 def get_uitgever(nid):
     """
@@ -689,8 +783,7 @@ def get_uitvoerders_uitvoeringen(uitvoerders_id):
 
     :param uitvoerders_id: Id of the uitvoerders
     """
-    uitvoeringen = Uitvoering.query.filter_by(uitvoerders_id=uitvoerders_id)
-    return uitvoeringen
+    return Uitvoering.query.filter_by(uitvoerders_id=uitvoerders_id)
 
 def get_uitvoerders():
     """
@@ -706,12 +799,16 @@ def get_uitvoerders_pairs():
     This can be used in a SelectField.
     """
     uitvoerders = Uitvoerders.query.order_by(Uitvoerders.naam.asc())
-    res = [(uitvoerder.id, uitvoerder.naam) for uitvoerder in uitvoerders]
-    return res
+    return [(uitvoerder.id, uitvoerder.naam) for uitvoerder in uitvoerders]
 
 def get_uitvoeringen():
     """
     Function to get uitvoeringen.
     """
-    uitvoeringen = Uitvoering.query
-    return uitvoeringen
+    return Uitvoering.query
+
+def get_uitvoering(nid):
+    """
+    Function to get a specific uitvoering.
+    """
+    return Uitvoering.query.filter_by(id=nid)

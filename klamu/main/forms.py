@@ -55,6 +55,12 @@ class Komponist(Form):
     naam = StringField('Naam', validators=[wtv.InputRequired()])
     submit = SubmitField('OK')
 
+class Kompositie(Form):
+    komponist = SelectField('Komponist', coerce=str, render_kw={"onclick": "kompositieFunction();"})
+    naam = SelectField('Kompositie', validators=[wtv.InputRequired()])
+    submit = SubmitField('OK')
+    komponist_mod = SubmitField('Komponist Aanpassen')
+
 class Uitgever(Form):
     uitgever = StringField('Naam', validators=[wtv.InputRequired()])
     submit = SubmitField('OK')

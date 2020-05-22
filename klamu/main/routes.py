@@ -92,7 +92,7 @@ def delete_komponist(nid):
 @login_required
 def delete_uitgever(nid):
     current_app.logger.debug(f"Referrer: {request.referrer}")
-    res = Uitvoerders.delete(nid)
+    res = Uitgever.delete(nid)
     if int(res['nid']) > 0:
         next_url = url_for('main.show_cds', nid=res['nid'])
     else:
@@ -111,6 +111,15 @@ def delete_uitvoerders(nid):
         next_url = request.referrer
     flash(res['msg'], res['status'])
     return redirect(next_url)
+
+@main.route('/komponist/selected', methods=['GET', 'POST'])
+@login_required
+def selected_komponist():
+    komponist = request.get_json()
+    print(komponist)
+    komposities = get_komposities_for_komponist(komponist['komponist_id'])
+    kompositie_list = [f"<option value=\"{k.id}\">{k.naam}</option>" for k in komposities.all()]
+    return '<br>'.join(kompositie_list)
 
 @main.route('/cd/<nid>')
 def show_cd(nid):
@@ -249,19 +258,31 @@ def update_uitvoerders(nid='-1'):
         next_url = session.pop('uitvoerders_referrer', url_for('main.show_uitvoerders', nid=res['nid']))
         return redirect(next_url)
 
-@main.route('/cd/uitvoering', methods=[])
+@main.route('/cd/uitvoering/', methods=[])
 @main.route('/cd/uitvoering/cd=<cid>', methods=['GET', 'POST'])
 @main.route('/cd/uitvoering/uitvoering=<nid>', methods=['GET', 'POST'])
 @login_required
-def update_uitvoering(nid=None, cid=None):
+def update_uitvoering(uitvoering=None, cid=None):
     if request.method == "GET":
-        cd = ds.get_cd(nid)
-        uitvoeringen = ds.get_cd_uitvoeringen(cd=nid)
+        # If request to change CD
+        if cid:
+            cd = get_cd(cid)
+            uitvoeringen = get_cd_uitvoeringen(cd=cid)
+            this_uitvoering = get_last_uitvoering(cd=cid)
+            this_uitvoering['volgnummer'] += 1
+        elif uitvoering:
+            this_uitvoering = get_uitvoering(uitvoering)
+            cd = get_cd(this_uitvoering.cd_id)
+            uitvoeringen = get_cd_uitvoeringen(cd=cd.id)
+        else:
+            flash('Onverwachte oproep', 'error')
+            return redirect(request.referrer)
         form = forms.Uitvoering(
-            komponist=session.pop('komponist_id', -1),
+            volgnummer=this_uitvoering['volgnummer']+1,
+            komponist=session.pop('komponist_id', this_uitvoering['komponist_id']),
             kompositie=session.pop('kompositie_id', -1),
-            uitvoerders=session.pop('uitvoerders_id', -1),
-            dirigent=session.pop('dirigent_id', -1)
+            uitvoerders=session.pop('uitvoerders_id', this_uitvoering['uitvoerders_id']),
+            dirigent=session.pop('dirigent_id', this_uitvoering['dirigent_id'])
         )
         res = ds.get_komponist_pairs()
         res.insert(0, (-1, '(kies komponist)'))
@@ -284,20 +305,41 @@ def update_uitvoering(nid=None, cid=None):
         return render_template("uitvoering_modify.html", **props)
     else:
         form = forms.Uitvoering()
+        if form.submit.data:
+            props = dict(
+                volgnummer=form.volgnummer.data,
+                kompositie_id=form.kompositie.data,
+                uitvoerders_id=form.uitvoerders.data,
+                dirigent_id=form.dirigent.data
+            )
+            if uitvoering:
+                this_uitvoering = get_uitvoering(uitvoering)
+                props['id'] = uitvoering
+                props['cd_id'] = this_uitvoering.cd_id
+            elif cid:
+                props['cd_id'] = cid
+            res = Uitvoering.update(**props)
+            flash(res['msg'], res['status'])
+            session['uitvoerders_id'] = res['nid']
+            next_url = session.pop('uitvoerders_referrer', url_for('main.show_uitvoerders', nid=res['nid']))
+            return redirect(next_url)
         session['komponist_id'] = form.komponist.data
         session['kompositie_id'] = form.kompositie.data
         session['uitvoerders_id'] = form.uitvoerders.data
         session['dirigent_id'] = form.dirigent.data
         if form.komponist_mod.data:
-            # Komponist aanpassen
             return redirect(url_for('main.update_komponist', nid=session['komponist_id']))
         elif form.uitvoerders_mod.data:
-            # Uitvoerders aanpassen
             return redirect(url_for('main.update_uitvoerders', nid=session['uitvoerders_id']))
         elif form.dirigent_mod.data:
-            # Dirigent aanpassen
             return redirect(url_for('main.update_dirigent', nid=session['dirigent_id']))
-        return redirect(url_for("main.index"))
+        elif form.kompositie_mod.data:
+            return redirect(url_for('main.update_kompositie', nid=session['kompositie_id']))
+        else:
+            msg = "Invalid request"
+            flash(msg, "error")
+            current_app.logger.error(msg)
+            return redirect(url_for("main.show_cds"))
 
 
 @main.route('/cd/update', methods=['GET', 'POST'])
@@ -410,9 +452,9 @@ def update_komponist(nid='-1'):
     if nid == '-1':
         nid = None
     current_app.logger.debug(f"Referrer: {request.referrer}")
-    if url_for('main.update_uitvoering') in request.referrer:
-        session['komponist_referrer'] = request.referrer
-        current_app.logger.debug(f"Referrer is toegevoegd.")
+    # if url_for('main.update_uitvoering') in request.referrer:
+    session['komponist_referrer'] = request.referrer
+    current_app.logger.debug(f"Referrer is toegevoegd.")
     form = forms.Komponist()
     if request.method == "GET":
         if nid:
@@ -444,8 +486,73 @@ def update_komponist(nid='-1'):
         res = Komponist.update(**props)
         flash(res['msg'], res['status'])
         session['komponist_id'] = res['nid']
+        # Remove kompositie if it was set
+        session.pop('kompositie_id', None)
         next_url = session.pop('komponist_referrer', url_for('main.show_komponisten', nid=res['nid']))
         return redirect(next_url)
+
+@main.route('/kompositie/update', methods=['GET', 'POST'])
+@main.route('/kompositie/update/<nid>', methods=['GET', 'POST'])
+@login_required
+def update_kompositie(nid='-1'):
+    if nid == '-1':
+        nid = None
+    session['kompositie_referrer'] = request.referrer
+    current_app.logger.debug(f"Referrer {request.referrer} is toegevoegd.")
+    if request.method == "GET":
+        if nid:
+            # Update existing Kompositie
+            hdr = "Kompositie Aanpassen"
+            kompositie = get_kompositie(nid)
+            komponist = get_komponist(kompositie.komponist_id)
+            form = forms.Kompositie(komponist=komponist.id)
+            form.naam.data = kompositie.naam
+            uitvoeringen = get_kompositie_uitvoeringen(nid)
+            uitvoeringen_hdr = kompositie.naam
+        elif 'komponist_id' in session:
+            # Add kompositie for komponist
+            hdr = "Kompositie Toevoegen"
+            komponist_id = session['komponist_id']
+            komponist = get_komponist(komponist_id)
+            form = forms.Kompositie(komponist=komponist_id)
+            uitvoeringen = get_komponist_uitvoeringen(komponist_id)
+            uitvoeringen_hdr = f"{komponist.voornaam} {komponist.naam}"
+        else:
+            # Set komponist and kompositie
+            hdr = "Kompositie Toevoegen"
+            form = forms.Kompositie(komponist=-1)
+            # komponisten = get_komponisten()
+            uitvoeringen_hdr = None
+        komponisten = ds.get_komponist_pairs()
+        komponisten.insert(0, (-1, '(geen komponist)'))
+        form.komponist.choices = komponisten
+        komposities = get_kompositie_pairs()
+        # komposities.insert(0, (-1, '(geen kompositie)'))
+        form.naam.choices = komposities
+        props = dict(
+            hdr=hdr,
+            form=form
+        )
+        if uitvoeringen_hdr:
+            props['uitvoeringen'] = uitvoeringen
+            props['uitvoeringen_hdr'] = uitvoeringen_hdr
+        else:
+            props['komponisten'] = komponisten
+        return render_template('kompositie_modify.html', **props)
+    else:
+        form = forms.Kompositie()
+        props = dict(
+            naam=form.naam.data,
+            komponist_id=form.komponist.data
+        )
+        if nid:
+            props['id'] = nid
+        res = Kompositie.update(**props)
+        flash(res['msg'], res['status'])
+        session['kompositie_id'] = res['nid']
+        next_url = session.pop('kompositie_referrer', url_for('main.show_kompositie', nid=res['nid']))
+        return redirect(next_url)
+
 
 @main.route('/uitgever/update', methods=['GET', 'POST'])
 @main.route('/uitgever/update/<nid>', methods=['GET', 'POST'])
