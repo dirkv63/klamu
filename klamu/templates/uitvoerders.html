@@ -2,5 +2,11 @@
 {% import "macros.html" as macros with context %}
 
 {% block page_content %}
-    {{ macros.uitvoerders(hdr, uitvoerders) }}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            {{ macros.uitvoerders(hdr, uitvoerders) }}
+        </div>
+    </div>
+</div>
 {% endblock %}

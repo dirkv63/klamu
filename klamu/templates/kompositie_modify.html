@@ -2,18 +2,6 @@
 {% import "bootstrap/wtf.html" as wtf %}
 {% import "macros.html" as macros with context %}
 
-{% block head %}
-{{ super() }}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
-{% endblock %}
-
-    <div class="col-md-8">
-        {% if uitvoeringen is defined %}
-            {{ macros.uitvoeringen(uitvoeringen_hdr, uitvoeringen) }}
-        {% else %}
-            {{ macros.komponisten("Overzicht komponisten", komponisten) }}
-        {% endif %}
-    </div>
 
 {% block page_content %}
 <div class="row">
@@ -21,36 +9,14 @@
         <h1>Kompositie Aanpassen</h1>
        {{ wtf.quick_form(form) }}
     </div>
+    <div class="col-md-8">
+        {% if uitvoeringen is defined %}
+            {{ macros.uitvoeringen(uitvoeringen_hdr, uitvoeringen) }}
+        {% else %}
+            {{ macros.komponisten("Overzicht komponisten", komponisten) }}
+        {% endif %}
+    </div>
 </div>
-<script>
-    function kompositieFunction() {
-        var csrftoken = $('meta[name=csrf_token]').attr('content')
-        // var csrftoken = {{ form.csrf_token }}
-
-        $.ajaxSetup({
-            beforeSend: function(xhr, settings) {
-                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                    xhr.setRequestHeader("X-CSRFToken", csrftoken)
-                }
-            }
-        })
-
-        var my = $('#komponist option:selected').val();
-        var data1 = {'komponist_id': my};
-        alert(JSON.stringify(data1));
-        $.ajax({
-            url: '/komponist/selected',
-            data: JSON.stringify(data1),
-            method: 'POST',
-            contentType: 'application/json',
-            success: function(data) {
-                alert(data);
-                var kompositie = $('#naam');
-                kompositie.empty().append(data);
-            }
-        });
-    };
-</script>
 {% endblock %}
 
 

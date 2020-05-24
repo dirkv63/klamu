@@ -25,7 +25,6 @@ def logout():
     logout_user()
     return redirect(url_for('main.index'))
 
-
 @main.route('/pwdupdate', methods=['GET', 'POST'])
 @login_required
 def pwd_update():
@@ -41,12 +40,10 @@ def pwd_update():
         return redirect(url_for('main.index'))
     return render_template('login.html', form=form, hdr='Change Password')
 
-
 @main.route('/')
 @main.route('/index')
 def index():
-    return render_template("index.html")
-
+    return redirect(url_for('main.show_cds'))
 
 @main.errorhandler(404)
 def page_not_found(e):
@@ -116,9 +113,9 @@ def delete_uitvoerders(nid):
 @login_required
 def selected_komponist():
     komponist = request.get_json()
-    print(komponist)
-    komposities = get_komposities_for_komponist(komponist['komponist_id'])
-    kompositie_list = [f"<option value=\"{k.id}\">{k.naam}</option>" for k in komposities.all()]
+    komposities = get_kompositie_pairs(komponist['komponist_id'])
+    kompositie_list = [f"<option value=\"{k[0]}\">{k[1]}</option>" for k in komposities]
+    kompositie_list.insert(0,'<option value="-1">(kies kompositie)</option>')
     return '<br>'.join(kompositie_list)
 
 @main.route('/cd/<nid>')
@@ -259,10 +256,11 @@ def update_uitvoerders(nid='-1'):
         return redirect(next_url)
 
 @main.route('/cd/uitvoering/', methods=[])
-@main.route('/cd/uitvoering/cd=<cid>', methods=['GET', 'POST'])
 @main.route('/cd/uitvoering/uitvoering=<nid>', methods=['GET', 'POST'])
+@main.route('/cd/uitvoering/cd=<cid>', methods=['GET', 'POST'])
 @login_required
-def update_uitvoering(uitvoering=None, cid=None):
+def update_uitvoering(nid=None, cid=None):
+    current_app.logger.debug(f"In update_uitvoering with nid {nid} and cid {cid}")
     if request.method == "GET":
         # If request to change CD
         if cid:
@@ -270,31 +268,33 @@ def update_uitvoering(uitvoering=None, cid=None):
             uitvoeringen = get_cd_uitvoeringen(cd=cid)
             this_uitvoering = get_last_uitvoering(cd=cid)
             this_uitvoering['volgnummer'] += 1
-        elif uitvoering:
-            this_uitvoering = get_uitvoering(uitvoering)
-            cd = get_cd(this_uitvoering.cd_id)
+        elif nid:
+            this_uitvoering = get_uitvoering(nid)
+            session['kompositie_id'] = this_uitvoering['kompositie_id']
+            cd = get_cd(this_uitvoering['cd_id'])
             uitvoeringen = get_cd_uitvoeringen(cd=cd.id)
         else:
             flash('Onverwachte oproep', 'error')
             return redirect(request.referrer)
+        komponist_id = session.pop('komponist_id', this_uitvoering['komponist_id'])
         form = forms.Uitvoering(
-            volgnummer=this_uitvoering['volgnummer']+1,
-            komponist=session.pop('komponist_id', this_uitvoering['komponist_id']),
+            volgnummer=this_uitvoering['volgnummer'],
+            komponist=komponist_id,
             kompositie=session.pop('kompositie_id', -1),
             uitvoerders=session.pop('uitvoerders_id', this_uitvoering['uitvoerders_id']),
             dirigent=session.pop('dirigent_id', this_uitvoering['dirigent_id'])
         )
-        res = ds.get_komponist_pairs()
-        res.insert(0, (-1, '(kies komponist)'))
+        res = get_komponist_pairs()
+        res.insert(0, (-1, '(kies komponist'))
         form.komponist.choices = res
-        res = ds.get_kompositie_pairs()
-        res.insert(0, (-1, '(kies kompositie )'))
+        res = get_kompositie_pairs(komponist_id)
+        res.insert(0, (-1, '(kies kompositie)'))
         form.kompositie.choices = res
         res = ds.get_uitvoerders_pairs()
-        res.insert(0, (-1, '(geen uitvoerders)'))
+        res.insert(0, (-1, '(kies uitvoerders)'))
         form.uitvoerders.choices = res
         res = ds.get_dirigent_pairs()
-        res.insert(0, (-1, '(geen dirigent)'))
+        res.insert(0, (-1, '(kies dirigent)'))
         form.dirigent.choices = res
         props = dict(
             cd_content_hdr=cd.titel,
@@ -306,23 +306,27 @@ def update_uitvoering(uitvoering=None, cid=None):
     else:
         form = forms.Uitvoering()
         if form.submit.data:
+            kompositie_id = form.kompositie.data
+            if kompositie_id == "-1":
+                msg = "Kompositie is niet ingevuld"
+                current_app.logger.debug(msg)
+                flash(msg, 'error')
+                return redirect(request.referrer)
+            # Kompositie available
             props = dict(
                 volgnummer=form.volgnummer.data,
                 kompositie_id=form.kompositie.data,
                 uitvoerders_id=form.uitvoerders.data,
                 dirigent_id=form.dirigent.data
             )
-            if uitvoering:
-                this_uitvoering = get_uitvoering(uitvoering)
-                props['id'] = uitvoering
-                props['cd_id'] = this_uitvoering.cd_id
-            elif cid:
-                props['cd_id'] = cid
+            if nid:
+                this_uitvoering = get_uitvoering(nid)
+                props['id'] = nid
+                cid = this_uitvoering['cd_id']
+            props['cd_id'] = cid
             res = Uitvoering.update(**props)
             flash(res['msg'], res['status'])
-            session['uitvoerders_id'] = res['nid']
-            next_url = session.pop('uitvoerders_referrer', url_for('main.show_uitvoerders', nid=res['nid']))
-            return redirect(next_url)
+            return redirect(url_for('main.update_uitvoering', cid=cid))
         session['komponist_id'] = form.komponist.data
         session['kompositie_id'] = form.kompositie.data
         session['uitvoerders_id'] = form.uitvoerders.data
@@ -363,10 +367,12 @@ def update_cd(nid=None):
                     form = forms.Cd()
             form.titel.data = cd.titel
             form.identificatie.data = cd.identificatie
+            hdr = f"CD {cd.titel} aanpassen"
             session.pop('titel', None)
             session.pop('identificatie', None)
         else:
             # In case of new CD, remember Titel and Identificatie from before changing Uitgever.
+            hdr = "Nieuwe CD"
             form.titel.data = session.pop('titel', None)
             form.identificatie.data = session.pop('identificatie', None)
         uitgevers = ds.get_uitgever_pairs()
@@ -374,6 +380,7 @@ def update_cd(nid=None):
         form.uitgever.choices = uitgevers
         cds = ds.get_cds(uitgever_id)
         props = dict(
+            hdr=hdr,
             form=form,
             cd_list_hdr='Overzicht CDs',
             cds=cds
@@ -491,21 +498,21 @@ def update_komponist(nid='-1'):
         next_url = session.pop('komponist_referrer', url_for('main.show_komponisten', nid=res['nid']))
         return redirect(next_url)
 
-@main.route('/kompositie/update', methods=['GET', 'POST'])
+@main.route('/kompositie/update/', methods=['GET', 'POST'])
 @main.route('/kompositie/update/<nid>', methods=['GET', 'POST'])
 @login_required
-def update_kompositie(nid='-1'):
-    if nid == '-1':
+def update_kompositie(nid="-1"):
+    if nid == "-1":
         nid = None
-    session['kompositie_referrer'] = request.referrer
-    current_app.logger.debug(f"Referrer {request.referrer} is toegevoegd.")
+    form = forms.Kompositie()
     if request.method == "GET":
+        session['kompositie_referrer'] = request.referrer
+        current_app.logger.debug(f"Referrer {request.referrer} is toegevoegd.")
         if nid:
             # Update existing Kompositie
             hdr = "Kompositie Aanpassen"
             kompositie = get_kompositie(nid)
             komponist = get_komponist(kompositie.komponist_id)
-            form = forms.Kompositie(komponist=komponist.id)
             form.naam.data = kompositie.naam
             uitvoeringen = get_kompositie_uitvoeringen(nid)
             uitvoeringen_hdr = kompositie.naam
@@ -514,36 +521,24 @@ def update_kompositie(nid='-1'):
             hdr = "Kompositie Toevoegen"
             komponist_id = session['komponist_id']
             komponist = get_komponist(komponist_id)
-            form = forms.Kompositie(komponist=komponist_id)
             uitvoeringen = get_komponist_uitvoeringen(komponist_id)
             uitvoeringen_hdr = f"{komponist.voornaam} {komponist.naam}"
         else:
-            # Set komponist and kompositie
-            hdr = "Kompositie Toevoegen"
-            form = forms.Kompositie(komponist=-1)
-            # komponisten = get_komponisten()
-            uitvoeringen_hdr = None
-        komponisten = ds.get_komponist_pairs()
-        komponisten.insert(0, (-1, '(geen komponist)'))
-        form.komponist.choices = komponisten
-        komposities = get_kompositie_pairs()
-        # komposities.insert(0, (-1, '(geen kompositie)'))
-        form.naam.choices = komposities
+            msg = f"Kompositie noch komponist gekozen"
+            current_app.logger.error(msg)
+            flash(msg, 'error')
+            return redirect(session.pop('kompositie_referrer'))
         props = dict(
             hdr=hdr,
-            form=form
+            form=form,
+            uitvoeringen=uitvoeringen,
+            uitvoeringen_hdr=uitvoeringen_hdr
         )
-        if uitvoeringen_hdr:
-            props['uitvoeringen'] = uitvoeringen
-            props['uitvoeringen_hdr'] = uitvoeringen_hdr
-        else:
-            props['komponisten'] = komponisten
         return render_template('kompositie_modify.html', **props)
     else:
-        form = forms.Kompositie()
         props = dict(
             naam=form.naam.data,
-            komponist_id=form.komponist.data
+            komponist_id=session['komponist_id']
         )
         if nid:
             props['id'] = nid
@@ -552,7 +547,6 @@ def update_kompositie(nid='-1'):
         session['kompositie_id'] = res['nid']
         next_url = session.pop('kompositie_referrer', url_for('main.show_kompositie', nid=res['nid']))
         return redirect(next_url)
-
 
 @main.route('/uitgever/update', methods=['GET', 'POST'])
 @main.route('/uitgever/update/<nid>', methods=['GET', 'POST'])

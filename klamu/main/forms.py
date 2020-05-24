@@ -56,10 +56,8 @@ class Komponist(Form):
     submit = SubmitField('OK')
 
 class Kompositie(Form):
-    komponist = SelectField('Komponist', coerce=str, render_kw={"onclick": "kompositieFunction();"})
-    naam = SelectField('Kompositie', validators=[wtv.InputRequired()])
+    naam = StringField('Kompositie', validators=[wtv.InputRequired()])
     submit = SubmitField('OK')
-    komponist_mod = SubmitField('Komponist Aanpassen')
 
 class Uitgever(Form):
     uitgever = StringField('Naam', validators=[wtv.InputRequired()])
@@ -71,7 +69,7 @@ class Uitvoerders(Form):
 
 class Uitvoering(Form):
     volgnummer = IntegerField('Volgnummer', render_kw={"size": "4"})
-    komponist = SelectField('Komponist', coerce=str)
+    komponist = SelectField('Komponist', coerce=str, render_kw={"onclick": "kompositieFunction();"})
     komponist_mod = SubmitField('Komponist Toevoegen')
     kompositie = SelectField('Kompositie', coerce=str)
     kompositie_mod = SubmitField('Kompositie Toevoegen')

@@ -506,7 +506,7 @@ class Uitvoering(db.Model):
             # Insert new record
             msg = "Uitvoering is toegevoegd."
             params['created'] = now
-            uitvoering = Uitvoerders(**params)
+            uitvoering = Uitvoering(**params)
             db.session.add(uitvoering)
         db.session.commit()
         db.session.refresh(uitvoering)
@@ -679,15 +679,20 @@ def get_kompositie(nid):
     return kompositie
 
 def get_komposities_for_komponist(nid):
-    komposities = Kompositie.query.filter_by(komponist_id=nid)
+    komposities = Kompositie.query.filter_by(komponist_id=nid).order_by(Kompositie.naam.asc())
     return komposities
 
-def get_kompositie_pairs():
+def get_kompositie_pairs(komponist_id):
     """
     Function to return list of kompositie in pairs kompositie.id, kompositie.naam.
     This can be used in a SelectField.
+
+    :param komponist_id: ID of the komponist for which pairs are required. Komponist_id > 0 for valid komponist.
     """
-    komposities = Kompositie.query.order_by(Kompositie.naam.asc())
+    if int(komponist_id) > 0:
+        komposities = Kompositie.query.filter_by(komponist_id=komponist_id).order_by(Kompositie.naam.asc())
+    else:
+        komposities = Kompositie.query.order_by(Kompositie.naam.asc())
     res = [(kompositie.id, kompositie.naam) for kompositie in komposities]
     return res
 
@@ -722,6 +727,8 @@ def get_last_uitvoering(cd):
     Function to return the last uitvoering on a CD.
 
     :param cd: Id of the CD
+    :return: uitvoering_dict - dictionary with uitvoering attributes volgnummer, uitvoerders_id, dirigent_id,
+    kompositie_id and komponist_id.
     """
     uitvoering = Uitvoering.query.filter_by(cd_id=cd).order_by(Uitvoering.volgnummer.desc()).first()
     if uitvoering:
@@ -734,7 +741,8 @@ def get_last_uitvoering(cd):
             uitvoerders_id=uitvoering.uitvoerders_id or -1,
             dirigent_id=uitvoering.dirigent_id or -1,
             kompositie_id=uitvoering.kompositie_id or -1,
-            komponist_id=kompositie.komponist_id or -1
+            komponist_id=kompositie.komponist_id or -1,
+            cd_id = cd
         )
     else:
         uitvoering_dict = dict(
@@ -742,7 +750,8 @@ def get_last_uitvoering(cd):
             uitvoerders_id=-1,
             dirigent_id=-1,
             kompositie_id=-1,
-            komponist_id=-1
+            komponist_id=-1,
+            cd_id=cd
         )
     return uitvoering_dict
 
@@ -809,6 +818,18 @@ def get_uitvoeringen():
 
 def get_uitvoering(nid):
     """
-    Function to get a specific uitvoering.
+    Function to get a specific uitvoering. Result is returned as dictionary.
+
+    :param nid: Id of the uitvoering required.
+    :result: Dictionary with uitvoering
     """
-    return Uitvoering.query.filter_by(id=nid)
+    uitvoering = Uitvoering.query.filter_by(id=nid).one()
+    uitvoering_dict = dict(
+        volgnummer=uitvoering.volgnummer,
+        uitvoerders_id=uitvoering.uitvoerders_id,
+        dirigent_id=uitvoering.dirigent_id,
+        kompositie_id=uitvoering.kompositie_id,
+        komponist_id=uitvoering.kompositie.komponist_id,
+        cd_id=uitvoering.cd_id
+    )
+    return uitvoering_dict

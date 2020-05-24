@@ -145,7 +145,7 @@ def datestamp(epoch):
     :param epoch: Unix timestamp - seconds since 1/01/1970 UTC
     :return: Date in format 'DD/MM/YY
     """
-    return datetime.fromtimestamp(epoch).strftime('%d/%m/%y')
+    return datetime.fromtimestamp(epoch).strftime('%Y-%m-%d')
 
 
 def datetimestamp(epoch):
