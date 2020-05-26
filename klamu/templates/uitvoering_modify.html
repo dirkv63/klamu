@@ -11,7 +11,47 @@
 <div class="row">
     <div class="col-md-4">
         <h1>Uitvoering Aanpassen</h1>
-       {{ wtf.quick_form(form) }}
+        {{ wtf.quick_form(form) }}
+        {% if current_user.is_authenticated %}
+            {% if uitvoering_id is defined %}
+                <div class="container">
+                    <br/>
+                    <div class="row">
+                        <button type="button" class="btn btn-default" data-toggle="modal" data-target="#myModal">
+                            Uitvoering verwijderen
+                        </button>
+                    </div>
+                    <!-- Modal code -->
+                    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                        &times;
+                                    </button>
+                                    <h3 class="modal-title">Bevestig om te verwijderen</h3>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Bevestig om de gekozen uitvoering te verwijderen!</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <a href="{{ url_for('main.delete_uitvoering', nid=uitvoering_id) }}"
+                                       class="btn btn-danger" role="button">
+                                        Delete
+                                    </a>
+                                    <a href="{{ url_for('main.update_uitvoering', nid=uitvoering_id) }}"
+                                       class="btn btn-warning" role="button">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+
     </div>
     <div class="col-md-8">
         {{ macros.cd_content(cd_content_hdr, cd, uitvoeringen) }}

@@ -83,6 +83,14 @@
                 <tr>
                     <td>
                         <a href="{{ url_for('main.show_cd', nid=row.id) }}">{{ row.titel }}</a>
+                        {% if current_user.is_authenticated %}
+                            {% if row.Cnt == 0 %}
+                                <a href="{{ url_for('main.delete_cd', nid=row.id) }}">
+                                    <span class="glyphicon glyphicon-trash"></span>
+                                </a>
+                            {% endif %}
+                        {% endif %}
+
                     </td>
                     {% if row.identificatie == None %}
                         <td></td>
@@ -185,6 +193,13 @@
                 <td>
                     <a href="{{ url_for('main.show_kompositie', nid=row.Kompositie.id) }}">
                         {{ row.Kompositie.naam }}
+                        {% if current_user.is_authenticated %}
+                            {% if row.Cnt == 0 %}
+                                <a href="{{ url_for('main.delete_kompositie', nid=row.Kompositie.id) }}">
+                                    <span class="glyphicon glyphicon-trash"></span>
+                                </a>
+                            {% endif %}
+                        {% endif %}
                     </a>
                 </td>
                 <td>
@@ -192,7 +207,9 @@
                         {{ row.Kompositie.komponist.naam }} {{ row.Kompositie.komponist.voornaam }}
                     </a>
                 </td>
-                <td>{{ row.Cnt }}</td>
+                <td>
+                    {{ row.Cnt }}
+                </td>
             </tr>
         {% endfor %}
         </tbody>
@@ -217,10 +234,12 @@
                         <a href="{{ url_for('main.show_cds', nid=row.Uitgever.id) }}">
                             {{ row.Uitgever.naam }}
                         </a>
-                        {% if row.Cnt == 0 %}
-                            <a href="{{ url_for('main.delete_uitgever', nid=row.Uitgever.id) }}">
-                                <span class="glyphicon glyphicon-trash"></span>
-                            </a>
+                        {% if current_user.is_authenticated %}
+                            {% if row.Cnt == 0 %}
+                                <a href="{{ url_for('main.delete_uitgever', nid=row.Uitgever.id) }}">
+                                    <span class="glyphicon glyphicon-trash"></span>
+                                </a>
+                            {% endif %}
                         {% endif %}
                     </td>
                     <td>{{ row.Cnt }}</td>

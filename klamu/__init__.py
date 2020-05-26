@@ -5,6 +5,7 @@ from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from klamu.lib import my_env
+# from klamu.lib.db_model import *
 
 bootstrap = Bootstrap()
 db = SQLAlchemy()

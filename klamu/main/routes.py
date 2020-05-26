@@ -85,6 +85,18 @@ def delete_komponist(nid):
     flash(res['msg'], res['status'])
     return redirect(next_url)
 
+@main.route('/kompositie/delete/<nid>', methods=['GET'])
+@login_required
+def delete_kompositie(nid):
+    current_app.logger.debug(f"Referrer: {request.referrer}")
+    res = Kompositie.delete(nid)
+    if int(res['nid']) > 0:
+        next_url = url_for('main.show_kompositie', nid=res['nid'])
+    else:
+        next_url = request.referrer
+    flash(res['msg'], res['status'])
+    return redirect(next_url)
+
 @main.route('/uitgever/delete/<nid>', methods=['GET'])
 @login_required
 def delete_uitgever(nid):
@@ -108,6 +120,21 @@ def delete_uitvoerders(nid):
         next_url = request.referrer
     flash(res['msg'], res['status'])
     return redirect(next_url)
+
+@main.route('/uitvoering/delete/<nid>', methods=['GET'])
+@login_required
+def delete_uitvoering(nid):
+    current_app.logger.debug(f"Referrer: {request.referrer}")
+    uitvoering = get_uitvoering(nid)
+    if isinstance(uitvoering, dict):
+        res = Uitvoering.delete(nid)
+        flash(res['msg'], res['status'])
+        return redirect(url_for('main.show_cd', nid=uitvoering['cd_id']))
+    else:
+        msg = f'Uitvoering {nid} niet gevonden.'
+        flash(msg, 'error')
+        current_app.logger.error(msg)
+        return redirect(url_for('main.show_cds'))
 
 @main.route('/komponist/selected', methods=['GET', 'POST'])
 @login_required
@@ -197,7 +224,7 @@ def show_kompositie(nid):
 
 @main.route('/komposities')
 def show_komposities():
-    komposities = ds.get_komposities()
+    komposities = get_komposities()
     props = dict(
         hdr='Overzicht Komposities',
         komposities=komposities
@@ -302,6 +329,8 @@ def update_uitvoering(nid=None, cid=None):
             uitvoeringen=uitvoeringen,
             form=form
         )
+        if nid:
+            props['uitvoering_id'] = nid
         return render_template("uitvoering_modify.html", **props)
     else:
         form = forms.Uitvoering()

@@ -8,6 +8,78 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
+class Uitvoering(db.Model):
+    """
+    Table with Uitvoering Information
+    """
+    __tablename__ = "uitvoering"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    created = db.Column(db.Integer, nullable=False)
+    modified = db.Column(db.Integer, nullable=False)
+    volgnummer = db.Column(db.Integer)
+    cd_id = db.Column(db.Integer, db.ForeignKey('cd.id'))
+    cd = db.relationship('Cd', backref='uitvoering')
+    uitvoerders_id = db.Column(db.Integer, db.ForeignKey('uitvoerders.id'))
+    uitvoerders = db.relationship('Uitvoerders', backref='uitvoering')
+    dirigent_id = db.Column(db.Integer, db.ForeignKey('dirigent.id'))
+    dirigent = db.relationship('Dirigent', backref='uitvoering')
+    kompositie_id = db.Column(db.Integer, db.ForeignKey('kompositie.id'), nullable=False)
+    kompositie = db.relationship('Kompositie', backref='uitvoering')
+
+    @staticmethod
+    def delete(nid):
+        """
+        This method will delete the Uitvoering.
+
+        :param nid: Id of the uitvoering.
+        :return: Dictionary with nid (ID of the uitvoering), msg and status for flash.
+        """
+        try:
+            uitvoering = Uitvoering.query.filter_by(id=nid).one()
+        except NoResultFound:
+            msg = f"Uitvoering met ID {nid} is niet gevonden"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        else:
+            msg = f"Uitvoering met ID {nid} verwijderd."
+            current_app.logger.info(msg)
+            db.session.delete(uitvoering)
+            db.session.commit()
+            return dict(nid=-1, msg=msg, status="success")
+
+    @staticmethod
+    def update(**params):
+        """
+        This method will add or edit the Uitvoering.
+
+        :param params: Dictionary with uitvoering and kompositie attributes.
+        :return: Dictionary with nid (ID of the uitvoering), msg and status for flash.
+        """
+        now = int(time.time())
+        params['modified'] = now
+        if params['uitvoerders_id'] == -1:
+            params['uitvoerders_id'] = None
+        if params['dirigent_id'] == -1:
+            params['dirigent_id'] = None
+        if 'id' in params:
+            nid = int(params['id'])
+            # Update record
+            uitvoering = Uitvoering.query.filter_by(id=nid).one()
+            uitvoering.volgnummer = params['volgnummer']
+            uitvoering.cd_id = params['cd_id']
+            uitvoering.uitvoerders_id = params['uitvoerders_id']
+            uitvoering.dirigent_id = params['dirigent_id']
+            uitvoering.kompositie_id = params['kompositie_id']
+            msg = "Uitvoering is aangepast."
+        else:
+            # Insert new record
+            msg = "Uitvoering is toegevoegd."
+            params['created'] = now
+            uitvoering = Uitvoering(**params)
+            db.session.add(uitvoering)
+        db.session.commit()
+        db.session.refresh(uitvoering)
+        return dict(nid=uitvoering.id, msg=msg, status="success")
 
 class Cd(db.Model):
     """
@@ -21,6 +93,9 @@ class Cd(db.Model):
     titel = db.Column(db.Text, nullable=False)
     uitgever_id = db.Column(db.Integer, db.ForeignKey('uitgever.id'))
     uitgever = db.relationship("Uitgever", backref='cd')
+    items = db.column_property(db.session.query([db.func.count(Uitvoering.id)]).
+                                   where(Uitvoering.cd_id==id).
+                                   correlate_except(Uitvoering))
 
     @staticmethod
     def delete(nid):
@@ -86,7 +161,7 @@ class Dirigent(db.Model):
     """
     Table with Dirigent Information
     """
-    __tablename = "dirigent"
+    __tablename__ = "dirigent"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
     voornaam = db.Column(db.Text)
@@ -269,6 +344,36 @@ class Kompositie(db.Model):
     komponist = db.relationship('Komponist', backref='kompositie')
 
     @staticmethod
+    def delete(nid):
+        """
+        This method will delete the Kompositie on condition that there is no link to uitvoering.
+
+        :param nid: Id of the kompositie.
+        :return: Dictionary with nid (ID of the kompositie), msg and status for flash.
+        """
+        try:
+            query = db.session.query(Kompositie, db.func.count(Uitvoering.id).label("Cnt")) \
+                .outerjoin(Uitvoering)\
+                .filter(Kompositie.id == nid)\
+                .group_by(Uitvoering.kompositie_id).one()
+        except NoResultFound:
+            msg = f"Kompositie (id: {nid}) is niet gevonden!"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        cnt = query.Cnt
+        kompositie = query.Kompositie
+        if cnt == 0:
+            msg = f"Kompositie {kompositie.naam} verwijderd."
+            current_app.logger.info(msg)
+            db.session.delete(kompositie)
+            db.session.commit()
+            return dict(nid=-1, msg=msg, status="success")
+        else:
+            msg = f"Kompositie {kompositie.naam} nog verbonden met {cnt} uitvoering(en)."
+            current_app.logger.info(msg)
+            return dict(nid=nid, msg=msg, status="error")
+
+    @staticmethod
     def update(**params):
         """
         This method will add or edit the Kompositie.
@@ -299,7 +404,7 @@ class Uitgever(db.Model):
     """
     Table with Uitgever Information
     """
-    __tablename = "uitgever"
+    __tablename__ = "uitgever"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
 
@@ -381,7 +486,7 @@ class Uitvoerders(db.Model):
     """
     Table with Uitvoerders Information
     """
-    __tablename = "uitvoerders"
+    __tablename__ = "uitvoerders"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
 
@@ -459,58 +564,6 @@ class Uitvoerders(db.Model):
         db.session.commit()
         db.session.refresh(uitvoerders)
         return dict(nid=uitvoerders.id, msg=msg, status="success")
-
-class Uitvoering(db.Model):
-    """
-    Table with Uitgever Information
-    """
-    __tablename = "uitgever"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    created = db.Column(db.Integer, nullable=False)
-    modified = db.Column(db.Integer, nullable=False)
-    volgnummer = db.Column(db.Integer)
-    cd_id = db.Column(db.Integer, db.ForeignKey('cd.id'))
-    cd = db.relationship('Cd', backref='uitvoering')
-    uitvoerders_id = db.Column(db.Integer, db.ForeignKey('uitvoerders.id'))
-    uitvoerders = db.relationship('Uitvoerders', backref='uitvoering')
-    dirigent_id = db.Column(db.Integer, db.ForeignKey('dirigent.id'))
-    dirigent = db.relationship('Dirigent', backref='uitvoering')
-    kompositie_id = db.Column(db.Integer, db.ForeignKey('kompositie.id'), nullable=False)
-    kompositie = db.relationship('Kompositie', backref='uitvoering')
-
-    @staticmethod
-    def update(**params):
-        """
-        This method will add or edit the Uitvoering.
-
-        :param params: Dictionary with uitvoering and kompositie attributes.
-        :return: Dictionary with nid (ID of the uitvoering), msg and status for flash.
-        """
-        now = int(time.time())
-        params['modified'] = now
-        if params['uitvoerders_id'] == -1:
-            params['uitvoerders_id'] = None
-        if params['dirigent_id'] == -1:
-            params['dirigent_id'] = None
-        if 'id' in params:
-            nid = int(params['id'])
-            # Update record
-            uitvoering = Uitvoering.query.filter_by(id=nid).one()
-            uitvoering.volgnummer = params['volgnummer']
-            uitvoering.cd_id = params['cd_id']
-            uitvoering.uitvoerders_id = params['uitvoerders_id']
-            uitvoering.dirigent_id = params['dirigent_id']
-            uitvoering.kompositie_id = params['kompositie_id']
-            msg = "Uitvoering is aangepast."
-        else:
-            # Insert new record
-            msg = "Uitvoering is toegevoegd."
-            params['created'] = now
-            uitvoering = Uitvoering(**params)
-            db.session.add(uitvoering)
-        db.session.commit()
-        db.session.refresh(uitvoering)
-        return dict(nid=uitvoering.id, msg=msg, status="success")
 
 class History(db.Model):
     """
@@ -612,6 +665,7 @@ def get_cds(nid):
         cds = Cd.query.filter_by(uitgever_id=nid)
     else:
         cds = Cd.query
+    print(str(cds))
     return cds
 
 def get_dirigent(nid):
@@ -823,13 +877,17 @@ def get_uitvoering(nid):
     :param nid: Id of the uitvoering required.
     :result: Dictionary with uitvoering
     """
-    uitvoering = Uitvoering.query.filter_by(id=nid).one()
-    uitvoering_dict = dict(
-        volgnummer=uitvoering.volgnummer,
-        uitvoerders_id=uitvoering.uitvoerders_id,
-        dirigent_id=uitvoering.dirigent_id,
-        kompositie_id=uitvoering.kompositie_id,
-        komponist_id=uitvoering.kompositie.komponist_id,
-        cd_id=uitvoering.cd_id
-    )
-    return uitvoering_dict
+    try:
+        uitvoering = Uitvoering.query.filter_by(id=nid).one()
+    except NoResultFound:
+        return False
+    else:
+        uitvoering_dict = dict(
+            volgnummer=uitvoering.volgnummer,
+            uitvoerders_id=uitvoering.uitvoerders_id,
+            dirigent_id=uitvoering.dirigent_id,
+            kompositie_id=uitvoering.kompositie_id,
+            komponist_id=uitvoering.kompositie.komponist_id,
+            cd_id=uitvoering.cd_id
+        )
+        return uitvoering_dict
