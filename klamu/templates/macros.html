@@ -75,6 +75,7 @@
                 <th>Titel</th>
                 <th>Identificatie</th>
                 <th>Uitgever</th>
+                <th>Items</th>
                 <th>Toegevoegd</th>
             </tr>
             </thead>
@@ -84,7 +85,7 @@
                     <td>
                         <a href="{{ url_for('main.show_cd', nid=row.id) }}">{{ row.titel }}</a>
                         {% if current_user.is_authenticated %}
-                            {% if row.Cnt == 0 %}
+                            {% if row.items == 0 %}
                                 <a href="{{ url_for('main.delete_cd', nid=row.id) }}">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </a>
@@ -102,6 +103,7 @@
                             {{ row.uitgever.naam }}
                         </a>
                     </td>
+                    <td>{{ row.items }}</td>
                     <td>{{ row.created | datestamp }}</td>
                 </tr>
             {% endfor %}
@@ -124,18 +126,18 @@
             {% for row in dirigenten %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('main.show_dirigent', nid=row.Dirigent.id) }}">
-                            {{ row.Dirigent.naam }} {{ row.Dirigent.voornaam }}
+                        <a href="{{ url_for('main.show_dirigent', nid=row.id) }}">
+                            {{ row.fnaam }}
                         </a>
                         {% if current_user.is_authenticated %}
-                            {% if row.Cnt == 0 %}
-                                <a href="{{ url_for('main.delete_dirigent', nid=row.Dirigent.id) }}">
+                            {% if row.items == 0 %}
+                                <a href="{{ url_for('main.delete_dirigent', nid=row.id) }}">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </a>
                             {% endif %}
                         {% endif %}
                     </td>
-                    <td>{{ row.Cnt }}</td>
+                    <td>{{ row.items }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -150,25 +152,29 @@
             <thead>
             <tr>
                 <th>Komponist</th>
-                <th>Aantal</th>
+                <th>Komposities</th>
+                <th>Uitvoeringen</th>
+                <th>Toegevoegd</th>
             </tr>
             </thead>
             <tbody>
             {% for row in komponisten %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('main.show_komponist', nid=row.Komponist.id) }}">
-                            {{ row.Komponist.naam }} {{ row.Komponist.voornaam }}
+                        <a href="{{ url_for('main.show_komponist', nid=row.id) }}">
+                            {{ row.fnaam }}
                         </a>
                         {% if current_user.is_authenticated %}
-                            {% if row.Cnt == 0 %}
-                                <a href="{{ url_for('main.delete_komponist', nid=row.Komponist.id) }}">
+                            {% if row.komposities == 0 %}
+                                <a href="{{ url_for('main.delete_komponist', nid=row.id) }}">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </a>
                             {% endif %}
                         {% endif %}
                     </td>
-                    <td>{{ row.Cnt }}</td>
+                    <td>{{ row.komposities }}</td>
+                    <td>{{ row.items }}</td>
+                    <td>{{ row.created | datestamp }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -191,11 +197,11 @@
         {% for row in komposities %}
             <tr>
                 <td>
-                    <a href="{{ url_for('main.show_kompositie', nid=row.Kompositie.id) }}">
-                        {{ row.Kompositie.naam }}
+                    <a href="{{ url_for('main.show_kompositie', nid=row.id) }}">
+                        {{ row.naam }}
                         {% if current_user.is_authenticated %}
-                            {% if row.Cnt == 0 %}
-                                <a href="{{ url_for('main.delete_kompositie', nid=row.Kompositie.id) }}">
+                            {% if row.items == 0 %}
+                                <a href="{{ url_for('main.delete_kompositie', nid=row.id) }}">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </a>
                             {% endif %}
@@ -203,12 +209,12 @@
                     </a>
                 </td>
                 <td>
-                    <a href="{{ url_for('main.show_komponist', nid=row.Kompositie.komponist.id) }}">
-                        {{ row.Kompositie.komponist.naam }} {{ row.Kompositie.komponist.voornaam }}
+                    <a href="{{ url_for('main.show_komponist', nid=row.komponist.id) }}">
+                        {{ row.komponist.naam }} {{ row.komponist.voornaam }}
                     </a>
                 </td>
                 <td>
-                    {{ row.Cnt }}
+                    {{ row.items }}
                 </td>
             </tr>
         {% endfor %}
@@ -231,18 +237,18 @@
             {% for row in uitgevers %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('main.show_cds', nid=row.Uitgever.id) }}">
-                            {{ row.Uitgever.naam }}
+                        <a href="{{ url_for('main.show_cds', nid=row.id) }}">
+                            {{ row.naam }}
                         </a>
                         {% if current_user.is_authenticated %}
-                            {% if row.Cnt == 0 %}
-                                <a href="{{ url_for('main.delete_uitgever', nid=row.Uitgever.id) }}">
+                            {% if row.items == 0 %}
+                                <a href="{{ url_for('main.delete_uitgever', nid=row.id) }}">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </a>
                             {% endif %}
                         {% endif %}
                     </td>
-                    <td>{{ row.Cnt }}</td>
+                    <td>{{ row.items }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -264,18 +270,18 @@
             {% for row in uitvoerders %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('main.show_uitvoerders_uitvoeringen', nid=row.Uitvoerders.id) }}">
-                            {{ row.Uitvoerders.naam }}
+                        <a href="{{ url_for('main.show_uitvoerders_uitvoeringen', nid=row.id) }}">
+                            {{ row.naam }}
                         </a>
                         {% if current_user.is_authenticated %}
-                            {% if row.Cnt == 0 %}
-                                <a href="{{ url_for('main.delete_uitvoerders', nid=row.Uitvoerders.id) }}">
+                            {% if row.items == 0 %}
+                                <a href="{{ url_for('main.delete_uitvoerders', nid=row.id) }}">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </a>
                             {% endif %}
                         {% endif %}
                     </td>
-                    <td>{{ row.Cnt }}</td>
+                    <td>{{ row.items }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -309,6 +315,11 @@
                         {% if row.volgnummer != None %}
                             {{ row.volgnummer }}
                         {% endif %}
+                        {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('main.update_uitvoering', nid=row.id) }}">
+                                <span class="glyphicon glyphicon-pencil"></span>
+                            </a>
+                        {% endif %}
                     </td>
                     <td>
                         <a href="{{ url_for('main.show_kompositie', nid=row.kompositie.id) }}">
@@ -327,7 +338,7 @@
                     </td>
                     <td>
                         <a href="{{ url_for('main.show_dirigent', nid=row.dirigent.id) }}">
-                            {{ row.dirigent.naam}} {{ row.dirigent.voornaam }}
+                            {{ row.dirigent.fnaam}}
                         </a>
                     </td>
                 </tr>

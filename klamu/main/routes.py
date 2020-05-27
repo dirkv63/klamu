@@ -125,7 +125,7 @@ def delete_uitvoerders(nid):
 @login_required
 def delete_uitvoering(nid):
     current_app.logger.debug(f"Referrer: {request.referrer}")
-    uitvoering = get_uitvoering(nid)
+    uitvoering = get_uitvoering_dict(nid)
     if isinstance(uitvoering, dict):
         res = Uitvoering.delete(nid)
         flash(res['msg'], res['status'])
@@ -155,7 +155,7 @@ def show_cd(nid):
     cd = ds.get_cd(nid)
     uitvoeringen = ds.get_cd_uitvoeringen(cd=nid)
     props = dict(
-        cd_content_hdr=cd.titel,
+        cd_content_hdr=f"CD: {cd.titel}",
         cd=cd,
         uitvoeringen=uitvoeringen
     )
@@ -168,8 +168,13 @@ def show_cds(nid=None):
     Function to return CDs. If NID is specified, then CDs will be limited to uitgever with ID=NID.
     """
     cds = ds.get_cds(nid)
+    if nid:
+        uitgever = get_uitgever(nid)
+        hdr = f"Uitgever: {uitgever.naam}"
+    else:
+        hdr = "Overzicht CDs"
     props = dict(
-        cd_list_hdr='Overzicht CDs',
+        cd_list_hdr=hdr,
         cds=cds
     )
     return render_template('cds.html', **props)
@@ -179,7 +184,7 @@ def show_dirigent(nid):
     dirigent = ds.get_dirigent(nid)
     uitvoeringen = ds.get_dirigent_uitvoeringen(nid)
     props = dict(
-        hdr="{} {}".format(dirigent.voornaam, dirigent.naam),
+        hdr=f"Dirigent: {dirigent.fnaam}",
         uitvoeringen=uitvoeringen
     )
     return render_template('uitvoeringen.html', **props)
@@ -198,7 +203,7 @@ def show_komponist(nid):
     komponist = get_komponist(nid)
     uitvoeringen = get_komponist_uitvoeringen(nid)
     props = dict(
-        hdr="{} {}".format(komponist.voornaam, komponist.naam),
+        hdr=f"Komponist: {komponist.fnaam}",
         uitvoeringen=uitvoeringen
     )
     return render_template('uitvoeringen.html', **props)
@@ -217,7 +222,7 @@ def show_kompositie(nid):
     kompositie = ds.get_kompositie(nid)
     uitvoeringen = ds.get_kompositie_uitvoeringen(nid)
     props = dict(
-        hdr="{} - {} {}".format(kompositie.naam, kompositie.komponist.voornaam, kompositie.komponist.naam),
+        hdr=f"Kompositie: {kompositie.naam} ({kompositie.komponist.fnaam})",
         uitvoeringen=uitvoeringen
     )
     return render_template('uitvoeringen.html', **props)
@@ -296,7 +301,7 @@ def update_uitvoering(nid=None, cid=None):
             this_uitvoering = get_last_uitvoering(cd=cid)
             this_uitvoering['volgnummer'] += 1
         elif nid:
-            this_uitvoering = get_uitvoering(nid)
+            this_uitvoering = get_uitvoering_dict(nid)
             session['kompositie_id'] = this_uitvoering['kompositie_id']
             cd = get_cd(this_uitvoering['cd_id'])
             uitvoeringen = get_cd_uitvoeringen(cd=cd.id)
@@ -312,7 +317,7 @@ def update_uitvoering(nid=None, cid=None):
             dirigent=session.pop('dirigent_id', this_uitvoering['dirigent_id'])
         )
         res = get_komponist_pairs()
-        res.insert(0, (-1, '(kies komponist'))
+        res.insert(0, (-1, '(kies komponist)'))
         form.komponist.choices = res
         res = get_kompositie_pairs(komponist_id)
         res.insert(0, (-1, '(kies kompositie)'))
@@ -330,7 +335,7 @@ def update_uitvoering(nid=None, cid=None):
             form=form
         )
         if nid:
-            props['uitvoering_id'] = nid
+            props['uitvoering'] = get_uitvoering(nid)
         return render_template("uitvoering_modify.html", **props)
     else:
         form = forms.Uitvoering()
@@ -349,7 +354,7 @@ def update_uitvoering(nid=None, cid=None):
                 dirigent_id=form.dirigent.data
             )
             if nid:
-                this_uitvoering = get_uitvoering(nid)
+                this_uitvoering = get_uitvoering_dict(nid)
                 props['id'] = nid
                 cid = this_uitvoering['cd_id']
             props['cd_id'] = cid
@@ -544,14 +549,14 @@ def update_kompositie(nid="-1"):
             komponist = get_komponist(kompositie.komponist_id)
             form.naam.data = kompositie.naam
             uitvoeringen = get_kompositie_uitvoeringen(nid)
-            uitvoeringen_hdr = kompositie.naam
+            uitvoeringen_hdr = f"Kompositie: {kompositie.naam}"
         elif 'komponist_id' in session:
             # Add kompositie for komponist
             hdr = "Kompositie Toevoegen"
             komponist_id = session['komponist_id']
             komponist = get_komponist(komponist_id)
             uitvoeringen = get_komponist_uitvoeringen(komponist_id)
-            uitvoeringen_hdr = f"{komponist.voornaam} {komponist.naam}"
+            uitvoeringen_hdr = f"Komponist: {komponist.fnaam}"
         else:
             msg = f"Kompositie noch komponist gekozen"
             current_app.logger.error(msg)
@@ -619,7 +624,7 @@ def show_uitvoerders_uitvoeringen(nid):
     uitvoerders = ds.get_uitvoerders_detail(nid)
     uitvoeringen = ds.get_uitvoerders_uitvoeringen(nid)
     props = dict(
-        hdr=uitvoerders.naam,
+        hdr=f"Uitvoerders: {uitvoerders.naam}",
         uitvoeringen=uitvoeringen
     )
     return render_template('uitvoeringen.html', **props)

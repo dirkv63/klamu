@@ -68,6 +68,7 @@ class Uitvoerders(Form):
     submit = SubmitField('OK')
 
 class Uitvoering(Form):
+    submit = SubmitField('OK')
     volgnummer = IntegerField('Volgnummer', render_kw={"size": "4"})
     komponist = SelectField('Komponist', coerce=str, render_kw={"onclick": "kompositieFunction();"})
     komponist_mod = SubmitField('Komponist Toevoegen')
@@ -77,4 +78,3 @@ class Uitvoering(Form):
     uitvoerders_mod = SubmitField('Uitvoerders Toevoegen')
     dirigent = SelectField('Dirigent', coerce=str)
     dirigent_mod = SubmitField('Dirigent Toevoegen')
-    submit = SubmitField('OK')

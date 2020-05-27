@@ -5,81 +5,9 @@ from flask import current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import create_engine
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-
-class Uitvoering(db.Model):
-    """
-    Table with Uitvoering Information
-    """
-    __tablename__ = "uitvoering"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    created = db.Column(db.Integer, nullable=False)
-    modified = db.Column(db.Integer, nullable=False)
-    volgnummer = db.Column(db.Integer)
-    cd_id = db.Column(db.Integer, db.ForeignKey('cd.id'))
-    cd = db.relationship('Cd', backref='uitvoering')
-    uitvoerders_id = db.Column(db.Integer, db.ForeignKey('uitvoerders.id'))
-    uitvoerders = db.relationship('Uitvoerders', backref='uitvoering')
-    dirigent_id = db.Column(db.Integer, db.ForeignKey('dirigent.id'))
-    dirigent = db.relationship('Dirigent', backref='uitvoering')
-    kompositie_id = db.Column(db.Integer, db.ForeignKey('kompositie.id'), nullable=False)
-    kompositie = db.relationship('Kompositie', backref='uitvoering')
-
-    @staticmethod
-    def delete(nid):
-        """
-        This method will delete the Uitvoering.
-
-        :param nid: Id of the uitvoering.
-        :return: Dictionary with nid (ID of the uitvoering), msg and status for flash.
-        """
-        try:
-            uitvoering = Uitvoering.query.filter_by(id=nid).one()
-        except NoResultFound:
-            msg = f"Uitvoering met ID {nid} is niet gevonden"
-            current_app.logger.error(msg)
-            return dict(nid=-1, msg=msg, status="error")
-        else:
-            msg = f"Uitvoering met ID {nid} verwijderd."
-            current_app.logger.info(msg)
-            db.session.delete(uitvoering)
-            db.session.commit()
-            return dict(nid=-1, msg=msg, status="success")
-
-    @staticmethod
-    def update(**params):
-        """
-        This method will add or edit the Uitvoering.
-
-        :param params: Dictionary with uitvoering and kompositie attributes.
-        :return: Dictionary with nid (ID of the uitvoering), msg and status for flash.
-        """
-        now = int(time.time())
-        params['modified'] = now
-        if params['uitvoerders_id'] == -1:
-            params['uitvoerders_id'] = None
-        if params['dirigent_id'] == -1:
-            params['dirigent_id'] = None
-        if 'id' in params:
-            nid = int(params['id'])
-            # Update record
-            uitvoering = Uitvoering.query.filter_by(id=nid).one()
-            uitvoering.volgnummer = params['volgnummer']
-            uitvoering.cd_id = params['cd_id']
-            uitvoering.uitvoerders_id = params['uitvoerders_id']
-            uitvoering.dirigent_id = params['dirigent_id']
-            uitvoering.kompositie_id = params['kompositie_id']
-            msg = "Uitvoering is aangepast."
-        else:
-            # Insert new record
-            msg = "Uitvoering is toegevoegd."
-            params['created'] = now
-            uitvoering = Uitvoering(**params)
-            db.session.add(uitvoering)
-        db.session.commit()
-        db.session.refresh(uitvoering)
-        return dict(nid=uitvoering.id, msg=msg, status="success")
 
 class Cd(db.Model):
     """
@@ -93,9 +21,19 @@ class Cd(db.Model):
     titel = db.Column(db.Text, nullable=False)
     uitgever_id = db.Column(db.Integer, db.ForeignKey('uitgever.id'))
     uitgever = db.relationship("Uitgever", backref='cd')
-    items = db.column_property(db.session.query([db.func.count(Uitvoering.id)]).
-                                   where(Uitvoering.cd_id==id).
-                                   correlate_except(Uitvoering))
+
+    """
+    def __init__(self):
+        self.nid = Cd.id
+    """
+
+    @hybrid_property
+    def items(self):
+        """
+        Returns the number of uitvoeringen on a CD.
+        """
+        uit_list = [uit.id for uit in self.uitvoering]
+        return len(uit_list)
 
     @staticmethod
     def delete(nid):
@@ -165,6 +103,15 @@ class Dirigent(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
     voornaam = db.Column(db.Text)
+    fnaam = db.column_property(naam + " " + voornaam)
+
+    @hybrid_property
+    def items(self):
+        """
+        Returns the number of uitvoeringen.
+        """
+        uit_list = [uit.id for uit in self.uitvoering]
+        return len(uit_list)
 
     @staticmethod
     def delete(nid):
@@ -254,6 +201,26 @@ class Komponist(db.Model):
     modified = db.Column(db.Integer, nullable=False)
     naam = db.Column(db.Text, nullable=False)
     voornaam = db.Column(db.Text)
+    fnaam = db.column_property(naam + " " + voornaam)
+
+    @hybrid_property
+    def komposities(self):
+        """
+        Returns the number of komposities per komponist.
+        """
+        komp_list = [komp.id for komp in self.kompositie]
+        return len(komp_list)
+
+    @hybrid_property
+    def items(self):
+        """
+        Returns the number of uitvoeringen per komponist.
+        """
+        cnt = 0
+        for kompositie in self.kompositie:
+            for _ in kompositie.uitvoering:
+                cnt += 1
+        return cnt
 
     @staticmethod
     def delete(nid):
@@ -293,6 +260,7 @@ class Komponist(db.Model):
         :param params: Dictionary with naam, voornaam and optional ID, If ID then update else add Komponist.
         :return: Dictionary with nid (ID of the komponist), msg and status for flash.
         """
+        now = int(time.time())
         naam = params['naam']
         voornaam = params['voornaam']
         try:
@@ -320,6 +288,7 @@ class Komponist(db.Model):
                 msg = f"Komponist {voornaam} {naam} is aangepast."
             komponist.naam = naam
             komponist.voornaam = voornaam
+            komponist.modified = now
         else:
             if check_id:
                 msg = f"Komponist {voornaam} {naam} niet aangepast, bestaat al."
@@ -327,6 +296,8 @@ class Komponist(db.Model):
             else:
                 # Insert new record
                 msg = f"Komponist {voornaam} {naam} is toegevoegd."
+                params['created'] = now
+                params['modified'] = now
                 komponist = Komponist(**params)
                 db.session.add(komponist)
         db.session.commit()
@@ -342,6 +313,14 @@ class Kompositie(db.Model):
     naam = db.Column(db.Text, nullable=False)
     komponist_id = db.Column(db.Integer, db.ForeignKey('komponist.id'))
     komponist = db.relationship('Komponist', backref='kompositie')
+
+    @hybrid_property
+    def items(self):
+        """
+        Returns the number of uitvoeringen on a CD.
+        """
+        uit_list = [uit.id for uit in self.uitvoering]
+        return len(uit_list)
 
     @staticmethod
     def delete(nid):
@@ -407,6 +386,14 @@ class Uitgever(db.Model):
     __tablename__ = "uitgever"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
+
+    @hybrid_property
+    def items(self):
+        """
+        Returns the number of CDs for an Uitgever.
+        """
+        uit_list = [uit.id for uit in self.cd]
+        return len(uit_list)
 
     @staticmethod
     def delete(nid):
@@ -490,6 +477,14 @@ class Uitvoerders(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     naam = db.Column(db.Text, nullable=False)
 
+    @hybrid_property
+    def items(self):
+        """
+        Returns the number of uitvoeringen on a CD.
+        """
+        uit_list = [uit.id for uit in self.uitvoering]
+        return len(uit_list)
+
     @staticmethod
     def delete(nid):
         """
@@ -565,27 +560,78 @@ class Uitvoerders(db.Model):
         db.session.refresh(uitvoerders)
         return dict(nid=uitvoerders.id, msg=msg, status="success")
 
-class History(db.Model):
+class Uitvoering(db.Model):
     """
-    Table remembering which node is selected when.
+    Table with Uitvoering Information
     """
-    __tablename__ = "history"
+    __tablename__ = "uitvoering"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    node_id = db.Column(db.Integer, nullable=False)
-    timestamp = db.Column(db.Integer, nullable=False)
+    created = db.Column(db.Integer, nullable=False)
+    modified = db.Column(db.Integer, nullable=False)
+    volgnummer = db.Column(db.Integer)
+    cd_id = db.Column(db.Integer, db.ForeignKey('cd.id'))
+    cd = db.relationship('Cd', backref='uitvoering')
+    uitvoerders_id = db.Column(db.Integer, db.ForeignKey('uitvoerders.id'))
+    uitvoerders = db.relationship('Uitvoerders', backref='uitvoering')
+    dirigent_id = db.Column(db.Integer, db.ForeignKey('dirigent.id'))
+    dirigent = db.relationship('Dirigent', backref='uitvoering')
+    kompositie_id = db.Column(db.Integer, db.ForeignKey('kompositie.id'), nullable=False)
+    kompositie = db.relationship('Kompositie', backref='uitvoering')
 
     @staticmethod
-    def add(nid):
-        params = dict(
-            timestamp=int(time.time()),
-            node_id=nid
-        )
-        hist_inst = History(**params)
-        db.session.add(hist_inst)
+    def delete(nid):
+        """
+        This method will delete the Uitvoering.
+
+        :param nid: Id of the uitvoering.
+        :return: Dictionary with nid (ID of the uitvoering), msg and status for flash.
+        """
+        try:
+            uitvoering = Uitvoering.query.filter_by(id=nid).one()
+        except NoResultFound:
+            msg = f"Uitvoering met ID {nid} is niet gevonden"
+            current_app.logger.error(msg)
+            return dict(nid=-1, msg=msg, status="error")
+        else:
+            msg = f"Uitvoering met ID {nid} verwijderd."
+            current_app.logger.info(msg)
+            db.session.delete(uitvoering)
+            db.session.commit()
+            return dict(nid=-1, msg=msg, status="success")
+
+    @staticmethod
+    def update(**params):
+        """
+        This method will add or edit the Uitvoering.
+
+        :param params: Dictionary with uitvoering and kompositie attributes.
+        :return: Dictionary with nid (ID of the uitvoering), msg and status for flash.
+        """
+        now = int(time.time())
+        params['modified'] = now
+        if params['uitvoerders_id'] == -1:
+            params['uitvoerders_id'] = None
+        if params['dirigent_id'] == -1:
+            params['dirigent_id'] = None
+        if 'id' in params:
+            nid = int(params['id'])
+            # Update record
+            uitvoering = Uitvoering.query.filter_by(id=nid).one()
+            uitvoering.volgnummer = params['volgnummer']
+            uitvoering.cd_id = params['cd_id']
+            uitvoering.uitvoerders_id = params['uitvoerders_id']
+            uitvoering.dirigent_id = params['dirigent_id']
+            uitvoering.kompositie_id = params['kompositie_id']
+            msg = "Uitvoering is aangepast."
+        else:
+            # Insert new record
+            msg = "Uitvoering is toegevoegd."
+            params['created'] = now
+            uitvoering = Uitvoering(**params)
+            db.session.add(uitvoering)
         db.session.commit()
-        return
-
-
+        db.session.refresh(uitvoering)
+        return dict(nid=uitvoering.id, msg=msg, status="success")
 
 class User(UserMixin, db.Model):
     __tablename__ = "users"
@@ -655,7 +701,7 @@ def get_cd(nid):
     cd = Cd.query.filter_by(id=nid).one()
     return cd
 
-def get_cds(nid):
+def get_cds(nid=None):
     """
     Function to return list of all CDs.
 
@@ -665,7 +711,6 @@ def get_cds(nid):
         cds = Cd.query.filter_by(uitgever_id=nid)
     else:
         cds = Cd.query
-    print(str(cds))
     return cds
 
 def get_dirigent(nid):
@@ -678,16 +723,14 @@ def get_dirigent_pairs():
     This can be used in a SelectField.
     """
     dirigenten = Dirigent.query.order_by(Dirigent.naam.asc())
-    res = [(dirigent.id, f"{dirigent.voornaam} {dirigent.naam}") for dirigent in dirigenten]
+    res = [(dirigent.id, f"{dirigent.fnaam}") for dirigent in dirigenten]
     return res
 
 def get_dirigenten():
     """
     Function to return list of all Dirigenten and number of Uitvoeringen.
     """
-    query = db.session.query(Dirigent, db.func.count(Uitvoering.id).label("Cnt"))\
-        .outerjoin(Uitvoering).group_by(Uitvoering.dirigent_id)
-    return query
+    return Dirigent.query
 
 def get_dirigent_uitvoeringen(dirigent_id):
     """
@@ -708,7 +751,7 @@ def get_komponist_pairs():
     This can be used in a SelectField.
     """
     komponisten = Komponist.query.order_by(Komponist.naam.asc())
-    res = [(komponist.id, f"{komponist.voornaam} {komponist.naam}") for komponist in komponisten]
+    res = [(komponist.id, f"{komponist.fnaam}") for komponist in komponisten]
     return res
 
 def get_komponist_uitvoeringen(komponist_id):
@@ -724,9 +767,7 @@ def get_komponisten():
     """
     Function to return list of all Komponisten and number of Komposities.
     """
-    query = db.session.query(Komponist, db.func.count(Kompositie.id).label("Cnt")) \
-        .outerjoin(Kompositie).group_by(Kompositie.komponist_id)
-    return query
+    return Komponist.query
 
 def get_kompositie(nid):
     kompositie = Kompositie.query.filter_by(id=nid).one()
@@ -763,9 +804,7 @@ def get_komposities():
     """
     Function to return list of all komposities.
     """
-    query = db.session.query(Kompositie, db.func.count(Uitvoering.id).label("Cnt")) \
-        .outerjoin(Uitvoering).group_by(Uitvoering.kompositie_id)
-    return query
+    return Kompositie.query
 
 def get_cd_uitvoeringen(cd):
     """
@@ -827,9 +866,7 @@ def get_uitgevers():
     """
     Function to return list of all Uitgevers.
     """
-    query = db.session.query(Uitgever, db.func.count(Cd.id).label("Cnt")) \
-        .outerjoin(Cd).group_by(Cd.uitgever_id)
-    return query.all()
+    return Uitgever.query
 
 def get_uitvoerders_detail(uitvoerders_id):
     """
@@ -852,9 +889,7 @@ def get_uitvoerders():
     """
     Function to return list of all Uitvoerders.
     """
-    query = db.session.query(Uitvoerders, db.func.count(Uitvoering.id).label("Cnt")) \
-        .outerjoin(Uitvoering).group_by(Uitvoering.uitvoerders_id)
-    return query.all()
+    return Uitvoerders.query
 
 def get_uitvoerders_pairs():
     """
@@ -871,6 +906,12 @@ def get_uitvoeringen():
     return Uitvoering.query
 
 def get_uitvoering(nid):
+    """
+    Functionto return the uitvoering as a record.
+    """
+    return Uitvoering.query.filter_by(id=nid).one()
+
+def get_uitvoering_dict(nid):
     """
     Function to get a specific uitvoering. Result is returned as dictionary.
 

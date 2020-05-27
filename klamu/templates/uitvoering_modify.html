@@ -10,10 +10,14 @@
 {% block page_content %}
 <div class="row">
     <div class="col-md-4">
-        <h1>Uitvoering Aanpassen</h1>
+        {% if uitvoering is defined %}
+            <h1>Aanpassen "{{ uitvoering.kompositie.naam }}"</h1>
+        {% else %}
+            <h1>Nieuwe uitvoering</h1>
+        {% endif %}
         {{ wtf.quick_form(form) }}
         {% if current_user.is_authenticated %}
-            {% if uitvoering_id is defined %}
+            {% if uitvoering is defined %}
                 <div class="container">
                     <br/>
                     <div class="row">
@@ -33,14 +37,14 @@
                                     <h3 class="modal-title">Bevestig om te verwijderen</h3>
                                 </div>
                                 <div class="modal-body">
-                                    <p>Bevestig om de gekozen uitvoering te verwijderen!</p>
+                                    <p>Bevestig om de uitvoering "{{ uitvoering.kompositie.naam }}" te verwijderen!</p>
                                 </div>
                                 <div class="modal-footer">
-                                    <a href="{{ url_for('main.delete_uitvoering', nid=uitvoering_id) }}"
+                                    <a href="{{ url_for('main.delete_uitvoering', nid=uitvoering.id) }}"
                                        class="btn btn-danger" role="button">
                                         Delete
                                     </a>
-                                    <a href="{{ url_for('main.update_uitvoering', nid=uitvoering_id) }}"
+                                    <a href="{{ url_for('main.update_uitvoering', nid=uitvoering.id) }}"
                                        class="btn btn-warning" role="button">
                                         Cancel
                                     </a>
