@@ -493,9 +493,9 @@ def update_komponist(nid='-1'):
     if nid == '-1':
         nid = None
     current_app.logger.debug(f"Referrer: {request.referrer}")
-    # if url_for('main.update_uitvoering') in request.referrer:
-    session['komponist_referrer'] = request.referrer
-    current_app.logger.debug(f"Referrer is toegevoegd.")
+    if url_for('main.update_uitvoering') in request.referrer:
+        session['komponist_referrer'] = request.referrer
+        current_app.logger.debug(f"Referrer is toegevoegd.")
     form = forms.Komponist()
     if request.method == "GET":
         if nid:
